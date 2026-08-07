@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>주식 가격은 왜 오르고 내릴까?</title>
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --up:#ff4d4f;      /* KR convention: red = up */
+    --down:#3b82f6;    /* blue = down */
+    --accent:#ffd60a;
+    --text:#f4f7ff;
+    --sub:#9db4d8;
+    --card:#111a33;
+    --line:#2a3a5f;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    width:1280px; height:720px;
+    background:var(--bg);
+    overflow:hidden;
+    font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+    color:var(--text);
+  }
+  .stage{
+    position:relative;
+    width:1280px; height:720px;
+    background:radial-gradient(1200px 600px at 50% -10%, #16204a 0%, var(--bg) 60%);
+    overflow:hidden;
+  }
+  .progress-wrap{ position:absolute; left:0; bottom:0; width:100%; height:6px; background:rgba(255,255,255,.08); z-index:50; }
+  .progress-fill{ height:100%; width:0%; background:linear-gradient(90deg, var(--down), var(--up)); }
+
+  .scene{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none;
+    transition:opacity .6s ease;
+  }
+  .scene.active{ opacity:1; pointer-events:auto; }
+
+  .kicker{ position:absolute; top:40px; left:50%; transform:translateX(-50%); font-size:19px; letter-spacing:3px; color:var(--down); text-transform:uppercase; font-weight:700; opacity:.9; }
+  .headline{ position:absolute; top:74px; left:50%; transform:translateX(-50%); font-size:34px; font-weight:800; text-align:center; width:1050px; }
+
+  /* subtitle bar - functions as spoken narration substitute */
+  .subtitle-wrap{
+    position:absolute; bottom:44px; left:50%; transform:translateX(-50%);
+    width:1080px; display:flex; justify-content:center;
+  }
+  .subtitle{
+    background:rgba(6,10,24,.72); border:1px solid rgba(255,255,255,.12);
+    border-radius:12px; padding:14px 28px;
+    font-size:24px; font-weight:700; text-align:center; line-height:1.4;
+    backdrop-filter:blur(2px);
+  }
+
+  /* ===== SCENE 0: TITLE ===== */
+  #scene0 .title-main{ font-size:52px; font-weight:900; text-align:center; background:linear-gradient(90deg,#fff,var(--up)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #scene0 .title-sub{ margin-top:20px; font-size:22px; color:var(--sub); text-align:center; }
+  .chart-hero{ width:140px; height:100px; margin-bottom:20px; animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+
+  /* ===== SCENE 1: SUPPLY & DEMAND ===== */
+  .sd-body{ position:relative; width:1100px; height:400px; display:flex; align-items:center; justify-content:center; gap:50px; }
+  .side{ width:420px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .side-title{ font-size:22px; font-weight:800; }
+  .side-title.buy{ color:var(--up); }
+  .side-title.sell{ color:var(--down); }
+  .stack{ display:flex; gap:8px; align-items:flex-end; height:160px; }
+  .stack .bar{ width:38px; border-radius:6px 6px 0 0; }
+  .stack.buy .bar{ background:linear-gradient(180deg,#ff8082,var(--up)); }
+  .stack.sell .bar{ background:linear-gradient(180deg,#7cb1ff,var(--down)); }
+  .vs-badge{
+    width:80px; height:80px; border-radius:50%; background:var(--card); border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:900; color:var(--accent);
+    animation:pulse 1.2s ease-in-out infinite;
+  }
+
+  /* ===== SCENE 2 / 3: PRICE MOVE ===== */
+  .move-body{ position:relative; width:1000px; height:400px; display:flex; flex-direction:column; align-items:center; gap:26px; }
+  .price-tag{ font-size:56px; font-weight:900; }
+  .price-tag.up{ color:var(--up); }
+  .price-tag.down{ color:var(--down); }
+  .price-arrow{ font-size:40px; }
+  .balance-row{ display:flex; align-items:flex-end; gap:60px; height:150px; }
+  .balance-bar{ width:90px; border-radius:8px 8px 0 0; display:flex; align-items:flex-start; justify-content:center; padding-top:8px; font-weight:800; color:#0a0e1a; }
+  .mini-chart{ width:520px; height:120px; }
+
+  /* ===== SCENE 4: ORDER MATCH ===== */
+  .book-body{ position:relative; width:840px; height:380px; display:flex; gap:0; justify-content:center; }
+  .book-col{ width:280px; }
+  .book-head{ text-align:center; font-weight:800; padding:10px 0; border-radius:8px 8px 0 0; }
+  .book-head.bid{ background:rgba(255,77,79,.18); color:var(--up); }
+  .book-head.ask{ background:rgba(59,130,246,.18); color:var(--down); }
+  .book-row{ display:flex; justify-content:space-between; padding:9px 18px; font-size:17px; border-bottom:1px solid var(--line); background:var(--card); }
+  .book-row.bid{ color:var(--up); }
+  .book-row.ask{ color:var(--down); }
+  .match-center{ width:280px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+  .match-flash{ font-size:22px; font-weight:900; color:var(--accent); opacity:0; padding:10px 18px; border:2px solid var(--accent); border-radius:10px; animation:flashmatch 2.6s ease-in-out infinite; }
+  @keyframes flashmatch{ 0%,30%{opacity:0; transform:scale(.8);} 45%,70%{opacity:1; transform:scale(1);} 100%{opacity:0; transform:scale(.9);} }
+
+  /* ===== SCENE 5: NEWS / PSYCHOLOGY ===== */
+  .news-body{ position:relative; width:1000px; height:400px; display:flex; flex-direction:column; align-items:center; gap:30px; }
+  .news-card{ background:var(--card); border:2px solid var(--line); border-radius:14px; padding:18px 32px; font-size:22px; font-weight:800; display:flex; align-items:center; gap:14px; animation:pop 2.4s ease-in-out infinite; }
+  @keyframes pop{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
+  .crowd-row{ display:flex; gap:16px; }
+  .person{ width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:#0a0e1a; }
+  .person.buy{ background:var(--up); }
+  .person.sell{ background:var(--down); }
+
+  /* ===== SCENE 6: CANDLES ===== */
+  .candle-body{ position:relative; width:1000px; height:340px; display:flex; align-items:flex-end; justify-content:center; gap:16px; border-bottom:2px solid var(--line); }
+  .candle{ width:34px; display:flex; flex-direction:column; align-items:center; transform-origin:bottom; animation:grow 1.4s ease-out forwards; }
+  .candle .wick{ width:2px; background:var(--sub); }
+  .candle .body-box{ width:100%; border-radius:2px; }
+  .candle.up .body-box{ background:var(--up); }
+  .candle.down .body-box{ background:var(--down); }
+  @keyframes grow{ from{ transform:scaleY(0);} to{ transform:scaleY(1);} }
+
+  /* ===== SCENE 7: ENDING ===== */
+  #scene7 .end-title{ font-size:40px; font-weight:900; text-align:center; background:linear-gradient(90deg, var(--down), var(--up)); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.5; }
+  .recap-row{ display:flex; gap:18px; margin-top:32px; }
+  .recap-chip{ padding:12px 18px; background:var(--card); border:1px solid var(--line); border-radius:12px; font-size:16px; color:var(--sub); font-weight:700; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- SCENE 0: TITLE -->
+  <div class="scene active" id="scene0">
+    <svg class="chart-hero" viewBox="0 0 140 100">
+      <polyline points="0,80 25,55 45,65 70,25 95,40 140,5" fill="none" stroke="#ff4d4f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="title-main">주식 가격은 왜<br/>오르고 내릴까?</div>
+    <div class="title-sub">매일 보는 그 빨간불 파란불, 60초 만에 이해하기</div>
+  </div>
+
+  <!-- SCENE 1: SUPPLY & DEMAND -->
+  <div class="scene" id="scene1">
+    <div class="kicker">STEP 1</div>
+    <div class="headline">가격은 사려는 힘과 팔려는 힘의 줄다리기</div>
+    <div class="sd-body">
+      <div class="side">
+        <div class="side-title buy">사려는 사람 (매수)</div>
+        <div class="stack buy">
+          <div class="bar" style="height:60px;"></div>
+          <div class="bar" style="height:100px;"></div>
+          <div class="bar" style="height:80px;"></div>
+          <div class="bar" style="height:130px;"></div>
+          <div class="bar" style="height:70px;"></div>
+        </div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="side">
+        <div class="side-title sell">팔려는 사람 (매도)</div>
+        <div class="stack sell">
+          <div class="bar" style="height:90px;"></div>
+          <div class="bar" style="height:60px;"></div>
+          <div class="bar" style="height:110px;"></div>
+          <div class="bar" style="height:50px;"></div>
+          <div class="bar" style="height:75px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="subtitle-wrap"><div class="subtitle">가격은 산다는 사람과 판다는 사람이 만나 정해집니다.</div></div>
+  </div>
+
+  <!-- SCENE 2: PRICE UP -->
+  <div class="scene" id="scene2">
+    <div class="kicker" style="color:var(--up);">STEP 2</div>
+    <div class="headline">사려는 사람이 더 많으면, 가격은 오른다</div>
+    <div class="move-body">
+      <div class="balance-row">
+        <div class="balance-bar" style="height:150px; background:var(--up);">매수</div>
+        <div class="balance-bar" style="height:70px; background:var(--down);">매도</div>
+      </div>
+      <div class="price-arrow" style="color:var(--up);">▲</div>
+      <div class="price-tag up">52,300원 → 54,100원</div>
+    </div>
+    <div class="subtitle-wrap"><div class="subtitle">더 비싸도 사겠다는 사람이 몰리면 가격이 슬금슬금 올라갑니다.</div></div>
+  </div>
+
+  <!-- SCENE 3: PRICE DOWN -->
+  <div class="scene" id="scene3">
+    <div class="kicker" style="color:var(--down);">STEP 3</div>
+    <div class="headline">팔려는 사람이 더 많으면, 가격은 내린다</div>
+    <div class="move-body">
+      <div class="balance-row">
+        <div class="balance-bar" style="height:70px; background:var(--up);">매수</div>
+        <div class="balance-bar" style="height:150px; background:var(--down);">매도</div>
+      </div>
+      <div class="price-arrow" style="color:var(--down);">▼</div>
+      <div class="price-tag down">54,100원 → 51,600원</div>
+    </div>
+    <div class="subtitle-wrap"><div class="subtitle">더 싸게라도 팔겠다는 사람이 몰리면 가격이 뚝뚝 떨어집니다.</div></div>
+  </div>
+
+  <!-- SCENE 4: ORDER MATCHING -->
+  <div class="scene" id="scene4">
+    <div class="kicker">STEP 4</div>
+    <div class="headline">호가가 만나는 순간, 거래가 체결된다</div>
+    <div class="book-body">
+      <div class="book-col">
+        <div class="book-head bid">매수 호가</div>
+        <div class="book-row bid"><span>53,200</span><span>120</span></div>
+        <div class="book-row bid"><span>53,100</span><span>85</span></div>
+        <div class="book-row bid"><span>53,000</span><span>210</span></div>
+      </div>
+      <div class="match-center">
+        <div class="match-flash">체결! 53,200원</div>
+      </div>
+      <div class="book-col">
+        <div class="book-head ask">매도 호가</div>
+        <div class="book-row ask"><span>53,200</span><span>95</span></div>
+        <div class="book-row ask"><span>53,300</span><span>140</span></div>
+        <div class="book-row ask"><span>53,400</span><span>60</span></div>
+      </div>
+    </div>
+    <div class="subtitle-wrap"><div class="subtitle">사겠다는 가격과 팔겠다는 가격이 딱 맞아떨어지면 거래가 성사됩니다.</div></div>
+  </div>
+
+  <!-- SCENE 5: NEWS / PSYCHOLOGY -->
+  <div class="scene" id="scene5">
+    <div class="kicker">STEP 5</div>
+    <div class="headline">뉴스와 심리가 사람들의 마음을 바꾼다</div>
+    <div class="news-body">
+      <div class="news-card">📰 "이 회사, 실적이 좋아졌대!"</div>
+      <div class="crowd-row" id="crowd5">
+        <div class="person buy">+</div><div class="person buy">+</div><div class="person sell">−</div>
+        <div class="person buy">+</div><div class="person buy">+</div><div class="person buy">+</div>
+      </div>
+    </div>
+    <div class="subtitle-wrap"><div class="subtitle">좋은 소식엔 사자는 사람이, 나쁜 소식엔 팔자는 사람이 늘어납니다.</div></div>
+  </div>
+
+  <!-- SCENE 6: CANDLESTICK -->
+  <div class="scene" id="scene6">
+    <div class="kicker">STEP 6</div>
+    <div class="headline">그 수많은 거래가 쌓여 하나의 차트가 된다</div>
+    <div class="candle-body" id="candleBody"></div>
+    <div class="subtitle-wrap"><div class="subtitle">매수와 매도가 반복되며 만든 가격들이 캔들 하나하나에 담깁니다.</div></div>
+  </div>
+
+  <!-- SCENE 7: ENDING -->
+  <div class="scene" id="scene7">
+    <div class="end-title">결국 주가는,<br/>사람들의 심리가 만든 합의 가격입니다</div>
+    <div class="recap-row">
+      <div class="recap-chip">수요·공급</div>
+      <div class="recap-chip">→ 매수·매도</div>
+      <div class="recap-chip">→ 호가 체결</div>
+      <div class="recap-chip">→ 뉴스·심리</div>
+      <div class="recap-chip">→ 차트</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<script>
+  // build candlestick scene procedurally
+  const candleBody = document.getElementById('candleBody');
+  const pattern = [
+    {h:60,w:14,dir:'up'}, {h:40,w:10,dir:'down'}, {h:90,w:20,dir:'up'},
+    {h:70,w:16,dir:'up'}, {h:50,w:12,dir:'down'}, {h:110,w:24,dir:'up'},
+    {h:65,w:14,dir:'down'}, {h:130,w:28,dir:'up'}, {h:80,w:18,dir:'up'},
+    {h:45,w:10,dir:'down'}, {h:150,w:32,dir:'up'}
+  ];
+  pattern.forEach((p, i) => {
+    const c = document.createElement('div');
+    c.className = 'candle ' + p.dir;
+    c.style.animationDelay = (i * 0.12) + 's';
+    const wick = document.createElement('div');
+    wick.className = 'wick';
+    wick.style.height = p.w + 'px';
+    const body = document.createElement('div');
+    body.className = 'body-box';
+    body.style.height = p.h + 'px';
+    c.appendChild(wick);
+    c.appendChild(body);
+    candleBody.appendChild(c);
+  });
+
+  const durations = [4000,8000,8000,8000,8000,8000,8000,8000];
+  const scenes = document.querySelectorAll('.scene');
+  const total = durations.reduce((a,b)=>a+b,0);
+  const fill = document.getElementById('progressFill');
+  fill.style.transition = 'width ' + (total/1000) + 's linear';
+  requestAnimationFrame(()=>{ fill.style.width = '100%'; });
+
+  let idx = 0;
+  function advance(){
+    scenes[idx].classList.remove('active');
+    idx++;
+    if(idx < scenes.length){
+      scenes[idx].classList.add('active');
+      setTimeout(advance, durations[idx]);
+    }
+  }
+  setTimeout(advance, durations[0]);
+</script>
+</body>
+</html>
