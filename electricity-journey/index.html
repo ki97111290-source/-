@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>전기는 어떻게 콘센트까지 올까?</title>
+<style>
+  :root{
+    --bg:#0a1128;
+    --bg2:#0d1b3e;
+    --accent:#ffd60a;
+    --accent2:#4cc9f0;
+    --wire:#3a4a7a;
+    --text:#f4f7ff;
+    --sub:#9db4d8;
+    --card:#111c40;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    width:1280px; height:720px;
+    background:var(--bg);
+    overflow:hidden;
+    font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+    color:var(--text);
+  }
+  .stage{
+    position:relative;
+    width:1280px; height:720px;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #16244f 0%, var(--bg) 60%);
+    overflow:hidden;
+  }
+
+  /* ---------- progress bar ---------- */
+  .progress-wrap{
+    position:absolute; left:0; bottom:0; width:100%; height:6px;
+    background:rgba(255,255,255,.08); z-index:50;
+  }
+  .progress-fill{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--accent2), var(--accent));
+  }
+
+  /* ---------- scene manager ---------- */
+  .scene{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none;
+    transition:opacity .7s ease;
+  }
+  .scene.active{ opacity:1; pointer-events:auto; }
+
+  .kicker{
+    position:absolute; top:44px; left:50%; transform:translateX(-50%);
+    font-size:20px; letter-spacing:3px; color:var(--accent2);
+    text-transform:uppercase; font-weight:700; opacity:.85;
+  }
+  .headline{
+    position:absolute; top:80px; left:50%; transform:translateX(-50%);
+    font-size:38px; font-weight:800; text-align:center; width:1000px;
+  }
+  .caption{
+    position:absolute; bottom:56px; left:50%; transform:translateX(-50%);
+    font-size:22px; color:var(--sub); text-align:center; width:900px; line-height:1.5;
+  }
+  .badge{
+    display:inline-block; padding:6px 16px; border-radius:999px;
+    background:rgba(255,214,10,.12); color:var(--accent);
+    font-weight:700; font-size:18px; margin-bottom:14px; border:1px solid rgba(255,214,10,.4);
+  }
+
+  /* ================= SCENE 0: TITLE ================= */
+  #scene0 .title-main{
+    font-size:56px; font-weight:900; text-align:center;
+    background:linear-gradient(90deg,#fff, var(--accent2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  #scene0 .title-sub{
+    margin-top:22px; font-size:24px; color:var(--sub); text-align:center;
+  }
+  .bolt-hero{
+    width:90px; height:120px; margin-bottom:24px;
+    filter:drop-shadow(0 0 24px rgba(255,214,10,.7));
+    animation:pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ transform:scale(1); }
+    50%{ transform:scale(1.12); }
+  }
+
+  /* ================= SCENE 1: POWER PLANT ================= */
+  .plant-scene-body{ position:relative; width:1100px; height:420px; }
+  .ground{
+    position:absolute; bottom:0; left:0; width:100%; height:70px;
+    background:linear-gradient(180deg, #1a2450, #0c1330);
+    border-top:2px solid var(--wire);
+  }
+  .cooling-tower{
+    position:absolute; bottom:70px; width:150px; height:220px;
+    background:linear-gradient(180deg,#2a3a72,#1a2450);
+    border-radius:70px 70px 20px 20px / 40px 40px 20px 20px;
+    box-shadow:inset -14px 0 30px rgba(0,0,0,.4);
+  }
+  .cooling-tower.t1{ left:70px; }
+  .cooling-tower.t2{ left:250px; height:180px; }
+  .smoke{
+    position:absolute; width:60px; height:60px; border-radius:50%;
+    background:rgba(255,255,255,.18);
+    animation:rise 4s ease-in infinite;
+  }
+  @keyframes rise{
+    0%{ transform:translateY(0) scale(.4); opacity:0; }
+    20%{ opacity:.6; }
+    100%{ transform:translateY(-260px) scale(1.6); opacity:0; }
+  }
+  .turbine-hall{
+    position:absolute; bottom:70px; left:430px; width:260px; height:130px;
+    background:var(--card); border:2px solid var(--wire); border-radius:8px;
+  }
+  .turbine{
+    position:absolute; top:30px; left:100px; width:60px; height:60px;
+    border-radius:50%; border:6px solid var(--accent2);
+    border-top-color:var(--accent);
+    animation:spin 1.1s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .plant-label{
+    position:absolute; bottom:16px; left:430px; width:260px; text-align:center;
+    font-size:16px; color:var(--sub); font-weight:700;
+  }
+  .volt-tag{
+    position:absolute; top:-6px; right:20px;
+    background:var(--accent); color:#111; font-weight:800; font-size:14px;
+    padding:4px 10px; border-radius:6px;
+  }
+  .tower{
+    position:absolute; bottom:70px; width:8px; height:180px;
+    background:var(--wire);
+  }
+  .tower.tw1{ left:800px; }
+  .tower::before{
+    content:''; position:absolute; top:0; left:-46px; width:100px; height:8px;
+    background:var(--wire);
+  }
+  .spark-line{
+    position:absolute; bottom:170px; left:454px; width:600px; height:2px;
+    background:repeating-linear-gradient(90deg, var(--wire) 0 8px, transparent 8px 14px);
+  }
+  .dot{
+    position:absolute; width:10px; height:10px; border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 10px 3px rgba(255,214,10,.8);
+  }
+  .flow-1{
+    offset-path: path('M 0 0 L 600 0');
+    top:169px; left:454px;
+    animation:flow 1.6s linear infinite;
+  }
+  @keyframes flow{
+    from{ offset-distance:0%; opacity:0; }
+    10%{ opacity:1; }
+    90%{ opacity:1; }
+    to{ offset-distance:100%; opacity:0; }
+  }
+
+  /* ================= SCENE 2: TRANSMISSION ================= */
+  .sky{ position:relative; width:1100px; height:420px; }
+  .pylon{
+    position:absolute; bottom:70px; width:14px; height:260px;
+    background:linear-gradient(180deg,#4a5a95,#2a3560);
+  }
+  .pylon::before{
+    content:''; position:absolute; top:0; left:-70px; width:154px; height:10px;
+    background:#4a5a95; border-radius:4px;
+  }
+  .pylon::after{
+    content:''; position:absolute; top:60px; left:-46px; width:106px; height:8px;
+    background:#4a5a95; border-radius:4px;
+  }
+  .pylon.p1{ left:80px; }
+  .pylon.p2{ left:440px; height:220px; }
+  .pylon.p3{ left:800px; height:260px; }
+  .p-ground{
+    position:absolute; bottom:0; left:0; width:100%; height:70px;
+    background:linear-gradient(180deg, #1a2450, #0c1330);
+    border-top:2px solid var(--wire);
+  }
+  .line{
+    position:absolute; height:2px; background:var(--wire);
+  }
+  .line.l1{ top:130px; left:90px; width:352px; }
+  .line.l2{ top:170px; left:90px; width:352px; }
+  .line.l1b{ top:90px; left:450px; width:352px; }
+  .line.l2b{ top:130px; left:450px; width:352px; }
+  .t-dot{
+    position:absolute; width:9px; height:9px; border-radius:50%;
+    background:var(--accent2); box-shadow:0 0 10px 3px rgba(76,201,240,.8);
+  }
+  .td1{ offset-path: path('M 0 0 L 352 0'); top:130px; left:90px; animation:flow 2.1s linear infinite; }
+  .td2{ offset-path: path('M 0 0 L 352 0'); top:170px; left:90px; animation:flow 2.1s linear infinite .5s; }
+  .td3{ offset-path: path('M 0 0 L 352 0'); top:90px; left:450px; animation:flow 2.1s linear infinite .2s; }
+  .voltbig{
+    position:absolute; top:20px; left:340px; font-size:26px; font-weight:800; color:var(--accent);
+    text-shadow:0 0 12px rgba(255,214,10,.6);
+  }
+
+  /* ================= SCENE 3: SUBSTATION ================= */
+  .sub-body{ position:relative; width:900px; height:400px; display:flex; align-items:center; justify-content:center; gap:80px; }
+  .volt-box{
+    width:220px; height:220px; border-radius:20px;
+    background:var(--card); border:2px solid var(--wire);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px;
+  }
+  .volt-num{ font-size:34px; font-weight:900; }
+  .volt-num.high{ color:var(--accent); }
+  .volt-num.low{ color:var(--accent2); }
+  .volt-caption{ font-size:16px; color:var(--sub); }
+  .arrow-shrink{
+    font-size:60px; color:var(--sub);
+    animation:shrink 1.8s ease-in-out infinite;
+  }
+  @keyframes shrink{
+    0%,100%{ transform:scaleX(1); }
+    50%{ transform:scaleX(.6); }
+  }
+  .transformer-icon{
+    width:70px; height:70px; margin-bottom:6px;
+    border-radius:12px; background:linear-gradient(135deg,#233064,#141b3c);
+    border:2px solid var(--wire);
+    position:relative;
+  }
+  .transformer-icon::before, .transformer-icon::after{
+    content:''; position:absolute; top:14px; width:14px; height:14px; border-radius:50%;
+    border:3px solid var(--accent2);
+  }
+  .transformer-icon::before{ left:16px; }
+  .transformer-icon::after{ right:16px; border-color:var(--accent); }
+
+  /* ================= SCENE 4: NEIGHBORHOOD ================= */
+  .neigh-body{ position:relative; width:1100px; height:420px; }
+  .n-pole{
+    position:absolute; bottom:70px; left:130px; width:8px; height:220px;
+    background:#4a5a95;
+  }
+  .house{
+    position:absolute; bottom:70px; width:130px; height:110px;
+  }
+  .house .wall{
+    position:absolute; bottom:0; width:130px; height:80px;
+    background:var(--card); border:2px solid var(--wire); border-radius:4px;
+  }
+  .house .roof{
+    position:absolute; top:0; left:-8px; width:146px; height:0; border-left:73px solid transparent;
+    border-right:73px solid transparent; border-bottom:44px solid #3a4a8a;
+  }
+  .house .win{
+    position:absolute; bottom:18px; left:20px; width:26px; height:26px; background:var(--accent);
+    box-shadow:0 0 14px 4px rgba(255,214,10,.6); border-radius:3px;
+    animation:flicker 2.4s ease-in-out infinite;
+  }
+  @keyframes flicker{ 0%,100%{opacity:1;} 50%{opacity:.85;} }
+  .house.h1{ left:340px; }
+  .house.h2{ left:560px; }
+  .house.h3{ left:780px; }
+  .n-line{ position:absolute; top:100px; height:2px; background:var(--wire); }
+  .n-line.a{ left:138px; width:210px; }
+  .n-line.b{ left:138px; width:430px; top:110px; }
+  .n-line.c{ left:138px; width:650px; top:120px; }
+  .n-dot{ position:absolute; width:8px; height:8px; border-radius:50%; background:var(--accent2); box-shadow:0 0 8px 3px rgba(76,201,240,.7); }
+  .nd1{ offset-path: path('M 0 0 L 210 0'); top:100px; left:138px; animation:flow 1.4s linear infinite; }
+  .nd2{ offset-path: path('M 0 0 L 430 0'); top:110px; left:138px; animation:flow 1.9s linear infinite .3s; }
+  .nd3{ offset-path: path('M 0 0 L 650 0'); top:120px; left:138px; animation:flow 2.4s linear infinite .6s; }
+
+  /* ================= SCENE 5: WALL + OUTLET ================= */
+  .wall-body{ position:relative; width:1000px; height:420px; display:flex; align-items:center; justify-content:center; }
+  .wallcut{
+    width:640px; height:340px; background:var(--card); border:2px solid var(--wire); border-radius:16px;
+    position:relative; overflow:hidden;
+  }
+  .wire-path{
+    position:absolute; top:20px; left:40px; width:2px; height:0;
+    border-left:3px dashed var(--wire);
+  }
+  .wirebend{
+    position:absolute; border:3px dashed var(--wire); border-right:none; border-bottom:none;
+  }
+  .wb1{ top:20px; left:60px; width:1px; height:120px; border-left:3px dashed var(--wire); }
+  .wb2{ top:140px; left:60px; width:420px; height:1px; border-top:3px dashed var(--wire); }
+  .wb3{ top:140px; left:480px; width:1px; height:120px; border-left:3px dashed var(--wire); }
+  .w-dot{ position:absolute; width:9px; height:9px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px 3px rgba(255,214,10,.7); }
+  .wd1{ offset-path: path('M 0 0 L 0 120 L 420 120 L 420 240'); top:20px; left:60px; animation:flow 2.2s linear infinite; }
+  .outlet{
+    position:absolute; right:70px; bottom:60px; width:120px; height:150px;
+    background:#e8e8ec; border-radius:12px;
+    box-shadow:0 8px 24px rgba(0,0,0,.5);
+  }
+  .outlet .hole{
+    position:absolute; width:14px; height:34px; border-radius:6px; background:#333; top:36px;
+  }
+  .outlet .hole.h1{ left:26px; }
+  .outlet .hole.h2{ left:80px; }
+  .plug{
+    position:absolute; right:214px; bottom:118px; width:60px; height:40px;
+    animation:plugin 3s ease-in-out infinite;
+  }
+  .plug .body{
+    position:absolute; right:0; width:44px; height:40px; background:#2f7dd6; border-radius:6px;
+  }
+  .plug .pin{ position:absolute; top:8px; width:20px; height:6px; background:#c9c9c9; }
+  .plug .pin1{ left:-16px; top:6px; }
+  .plug .pin2{ left:-16px; top:22px; }
+  @keyframes plugin{
+    0%,20%{ transform:translateX(0); }
+    45%,100%{ transform:translateX(150px); }
+  }
+  .bulb-glow{
+    position:absolute; left:80px; top:40px; width:64px; height:64px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,214,10,.9), rgba(255,214,10,0) 70%);
+    opacity:0; animation:bulbon 3s ease-in-out infinite;
+  }
+  @keyframes bulbon{
+    0%,50%{ opacity:0; }
+    70%,100%{ opacity:1; }
+  }
+
+  /* ================= SCENE 6: BATTERY ================= */
+  .batt-body{ position:relative; width:1000px; height:420px; display:flex; align-items:center; justify-content:center; gap:60px; }
+  .battery{
+    position:relative; width:280px; height:140px; border:4px solid #cfd6ea; border-radius:14px;
+    background:linear-gradient(180deg,#182352,#0e1636);
+  }
+  .battery::before{
+    content:''; position:absolute; right:-18px; top:44px; width:16px; height:52px;
+    background:#cfd6ea; border-radius:0 6px 6px 0;
+  }
+  .term{ position:absolute; top:8px; font-size:28px; font-weight:900; }
+  .term.plus{ left:20px; color:var(--accent); }
+  .term.minus{ right:36px; color:var(--accent2); }
+  .ion{
+    position:absolute; width:16px; height:16px; border-radius:50%;
+    font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center;
+    color:#111;
+  }
+  .ion.pos{ background:var(--accent); box-shadow:0 0 8px rgba(255,214,10,.7); }
+  .i1{ offset-path: path('M 0 0 L -180 0'); top:70px; left:230px; animation:flow 2.4s linear infinite; }
+  .i2{ offset-path: path('M 0 0 L -180 0'); top:90px; left:230px; animation:flow 2.4s linear infinite .8s; }
+  .i3{ offset-path: path('M 0 0 L -180 0'); top:50px; left:230px; animation:flow 2.4s linear infinite 1.6s; }
+
+  .circuit{ position:relative; width:260px; height:260px; }
+  .wire-out{
+    position:absolute; border:3px solid var(--wire);
+  }
+  .wo1{ top:0; left:0; width:3px; height:110px; }
+  .wo2{ top:0; left:0; width:200px; height:3px; }
+  .wo3{ top:0; right:0; width:3px; height:110px; }
+  .wo4{ bottom:0; left:0; width:3px; height:110px; }
+  .wo5{ bottom:0; left:0; width:200px; height:3px; }
+  .wo6{ bottom:0; right:0; width:3px; height:110px; }
+  .bulb{
+    position:absolute; top:96px; left:96px; width:70px; height:70px; border-radius:50%;
+    background:radial-gradient(circle, #ffe98a, #ffd60a 60%, #a67c00 100%);
+    box-shadow:0 0 40px 12px rgba(255,214,10,.55);
+    animation:bglow 2s ease-in-out infinite;
+    display:flex; align-items:center; justify-content:center; font-size:26px;
+  }
+  @keyframes bglow{
+    0%,100%{ filter:brightness(1); }
+    50%{ filter:brightness(1.3); }
+  }
+  .e-dot{ position:absolute; width:8px; height:8px; border-radius:50%; background:var(--accent2); box-shadow:0 0 8px 3px rgba(76,201,240,.7); }
+  .e1{ offset-path: path('M 0 0 L 0 -110 L 200 -110 L 200 0'); bottom:0; left:0; animation:flow 2.6s linear infinite; }
+
+  /* ================= SCENE 7: ENDING ================= */
+  #scene7 .end-title{
+    font-size:44px; font-weight:900; text-align:center;
+    background:linear-gradient(90deg, var(--accent2), var(--accent));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .recap-row{ display:flex; gap:24px; margin-top:36px; }
+  .recap-chip{
+    padding:12px 20px; background:var(--card); border:1px solid var(--wire);
+    border-radius:12px; font-size:16px; color:var(--sub); font-weight:700;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- SCENE 0: TITLE -->
+  <div class="scene active" id="scene0">
+    <svg class="bolt-hero" viewBox="0 0 60 90"><polygon points="35,0 5,50 27,50 20,90 55,35 30,35" fill="#ffd60a"/></svg>
+    <div class="title-main">전기는 어떻게<br/>콘센트까지 올까?</div>
+    <div class="title-sub">매일 아무 생각 없이 꽂는 그 순간, 뒤에 숨은 긴 여정</div>
+  </div>
+
+  <!-- SCENE 1: POWER PLANT -->
+  <div class="scene" id="scene1">
+    <div class="kicker">STEP 1</div>
+    <div class="headline">발전소, 전기가 태어나는 곳</div>
+    <div class="plant-scene-body">
+      <div class="ground"></div>
+      <div class="cooling-tower t1"><div class="smoke" style="left:40px; animation-delay:0s;"></div></div>
+      <div class="cooling-tower t2"><div class="smoke" style="left:45px; animation-delay:1.3s;"></div></div>
+      <div class="turbine-hall">
+        <div class="volt-tag">154,000V</div>
+        <div class="turbine"></div>
+      </div>
+      <div class="spark-line"></div>
+      <div class="dot flow-1"></div>
+      <div class="tower tw1"></div>
+    </div>
+    <div class="caption">터빈이 뜨거운 증기의 힘으로 빠르게 돌면서 전기를 만들어냅니다.</div>
+  </div>
+
+  <!-- SCENE 2: TRANSMISSION -->
+  <div class="scene" id="scene2">
+    <div class="kicker">STEP 2</div>
+    <div class="headline">송전탑을 타고 먼 거리를 이동</div>
+    <div class="sky">
+      <div class="p-ground"></div>
+      <div class="pylon p1"></div>
+      <div class="pylon p2"></div>
+      <div class="pylon p3"></div>
+      <div class="line l1"></div><div class="line l2"></div>
+      <div class="line l1b"></div><div class="line l2b"></div>
+      <div class="t-dot td1"></div><div class="t-dot td2"></div><div class="t-dot td3"></div>
+      <div class="voltbig">초고압 송전</div>
+    </div>
+    <div class="caption">손실을 줄이기 위해 아주 높은 전압으로 바꿔 수백 km를 이동합니다.</div>
+  </div>
+
+  <!-- SCENE 3: SUBSTATION -->
+  <div class="scene" id="scene3">
+    <div class="kicker">STEP 3</div>
+    <div class="headline">변전소에서 전압을 낮추다</div>
+    <div class="sub-body">
+      <div class="volt-box">
+        <div class="transformer-icon"></div>
+        <div class="volt-num high">154,000V</div>
+        <div class="volt-caption">송전 전압</div>
+      </div>
+      <div class="arrow-shrink">→</div>
+      <div class="volt-box">
+        <div class="transformer-icon"></div>
+        <div class="volt-num low">22,900V</div>
+        <div class="volt-caption">배전 전압</div>
+      </div>
+    </div>
+    <div class="caption">변압기가 우리 동네에서 쓸 수 있는 낮은 전압으로 바꿔줍니다.</div>
+  </div>
+
+  <!-- SCENE 4: NEIGHBORHOOD -->
+  <div class="scene" id="scene4">
+    <div class="kicker">STEP 4</div>
+    <div class="headline">전봇대를 거쳐 우리 동네로</div>
+    <div class="neigh-body">
+      <div class="n-pole"></div>
+      <div class="n-line a"></div><div class="n-line b"></div><div class="n-line c"></div>
+      <div class="n-dot nd1"></div><div class="n-dot nd2"></div><div class="n-dot nd3"></div>
+      <div class="house h1"><div class="roof"></div><div class="wall"><div class="win"></div></div></div>
+      <div class="house h2"><div class="roof"></div><div class="wall"><div class="win"></div></div></div>
+      <div class="house h3"><div class="roof"></div><div class="wall"><div class="win"></div></div></div>
+    </div>
+    <div class="caption">220V로 한 번 더 낮아진 전기가 각 집으로 갈라져 들어갑니다.</div>
+  </div>
+
+  <!-- SCENE 5: WALL + OUTLET -->
+  <div class="scene" id="scene5">
+    <div class="kicker">STEP 5</div>
+    <div class="headline">벽 속 전선을 지나 콘센트까지</div>
+    <div class="wall-body">
+      <div class="wallcut">
+        <div class="wb1"></div><div class="wb2"></div><div class="wb3"></div>
+        <div class="w-dot wd1"></div>
+        <div class="bulb-glow"></div>
+        <div class="plug">
+          <div class="pin pin1"></div><div class="pin pin2"></div>
+          <div class="body"></div>
+        </div>
+        <div class="outlet"><div class="hole h1"></div><div class="hole h2"></div></div>
+      </div>
+    </div>
+    <div class="caption">벽 안에 숨겨진 전선을 타고 흘러온 전기, 마침내 콘센트에 닿습니다.</div>
+  </div>
+
+  <!-- SCENE 6: BATTERY -->
+  <div class="scene" id="scene6">
+    <div class="kicker">BONUS</div>
+    <div class="headline">그렇다면 배터리는 어떻게 전기를 만들까?</div>
+    <div class="batt-body">
+      <div class="battery">
+        <div class="term plus">+</div>
+        <div class="term minus">−</div>
+        <div class="ion pos i1">+</div>
+        <div class="ion pos i2">+</div>
+        <div class="ion pos i3">+</div>
+      </div>
+      <div class="circuit">
+        <div class="wire-out wo1"></div><div class="wire-out wo2"></div><div class="wire-out wo3"></div>
+        <div class="wire-out wo4"></div><div class="wire-out wo5"></div><div class="wire-out wo6"></div>
+        <div class="bulb">💡</div>
+        <div class="e-dot e1"></div>
+      </div>
+    </div>
+    <div class="caption">내부의 화학 반응이 이온을 밀어내고, 전자는 외부 회로를 돌아 불을 밝힙니다.</div>
+  </div>
+
+  <!-- SCENE 7: ENDING -->
+  <div class="scene" id="scene7">
+    <div class="end-title">당연했던 전기,<br/>이제 그 여정이 보이시나요?</div>
+    <div class="recap-row">
+      <div class="recap-chip">발전소</div>
+      <div class="recap-chip">→ 송전탑</div>
+      <div class="recap-chip">→ 변전소</div>
+      <div class="recap-chip">→ 우리집</div>
+      <div class="recap-chip">→ 콘센트</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<script>
+  const durations = [4000,6000,6000,5000,5000,6000,8000,5000];
+  const scenes = document.querySelectorAll('.scene');
+  const total = durations.reduce((a,b)=>a+b,0);
+  const fill = document.getElementById('progressFill');
+  fill.style.transition = 'width ' + (total/1000) + 's linear';
+  requestAnimationFrame(()=>{ fill.style.width = '100%'; });
+
+  let idx = 0;
+  function advance(){
+    scenes[idx].classList.remove('active');
+    idx++;
+    if(idx < scenes.length){
+      scenes[idx].classList.add('active');
+      setTimeout(advance, durations[idx]);
+    }
+  }
+  setTimeout(advance, durations[0]);
+</script>
+</body>
+</html>
