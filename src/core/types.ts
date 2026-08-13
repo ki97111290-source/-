@@ -1,5 +1,15 @@
 export type CharacterOrigin = "seed" | "user";
 
+export type TraitId =
+	| "gamer"
+	| "idol"
+	| "asmr"
+	| "meme"
+	| "dividend"
+	| "rookie"
+	| "veteran"
+	| "legend";
+
 export interface Character {
 	id: string;
 	name: string;
@@ -8,6 +18,8 @@ export interface Character {
 	/** data URI (업로드 이미지) 또는 절차적으로 만든 SVG 아바타 */
 	avatar: string;
 	origin: CharacterOrigin;
+	/** 캐릭터 성격. 수입·주가·배당·감정가에 서로 다르게 작용한다. */
+	trait: TraitId;
 	/** 장기 인기도. 응원으로 오르고 시간이 지나면 서서히 식는다. */
 	popularity: number;
 	/** 단기 화제성. 이슈가 터지면 급등하고 빠르게 사라진다. */
@@ -53,6 +65,13 @@ export interface AuctionState {
 	rivals: { name: string; budget: number; nextBidIn: number }[];
 }
 
+/** 연속 응원 콤보. 손으로 누른 응원만 쌓인다. */
+export interface ComboState {
+	count: number;
+	/** 이 시각(ms)까지 이어서 누르면 콤보 유지 */
+	until: number;
+}
+
 export interface LogEntry {
 	at: number;
 	text: string;
@@ -84,6 +103,16 @@ export interface GameState {
 	nextAuctionIn: number;
 	/** 다음 배당까지 남은 시간(초) */
 	nextDividendIn: number;
+
+	combo: ComboState;
+	/** 달성한 도전 과제 id */
+	achievements: string[];
+	/** 도전 과제로 쌓는 명성. 전체 수입에 영구 보너스를 준다. */
+	fame: number;
+	/** 최고 콤보 기록 */
+	bestCombo: number;
+	/** 경매 낙찰 횟수 */
+	auctionWins: number;
 
 	log: LogEntry[];
 	seed: number;

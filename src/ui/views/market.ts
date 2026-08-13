@@ -8,6 +8,7 @@ import {
 	holdingValue,
 	tradeFee,
 } from "../../game/market";
+import { isRare, traitOf } from "../../game/traits";
 import { html, raw, sparkline } from "../dom";
 import { ui } from "../uiState";
 
@@ -56,7 +57,10 @@ function row(state: GameState, c: Character): string {
 			<img class="ava" src="${c.avatar}" alt="" />
 			<div class="row__name">
 				<b>${c.name}</b>
-				<span class="muted">${c.agency} · 🔥 ${fmt(c.popularity)}</span>
+				<span class="muted">
+					<span class="trait ${isRare(traitOf(c)) ? "trait--rare" : ""}">${traitOf(c).icon}</span>
+					🔥 ${fmt(c.popularity)}
+				</span>
 			</div>
 			<div class="row__spark">${raw(sparkline(c.history, change >= 0 ? "#4ade80" : "#f87171"))}</div>
 			<div class="row__price">

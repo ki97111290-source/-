@@ -3,6 +3,7 @@ import type { GameState } from "../../core/types";
 import { BALANCE } from "../../game/balance";
 import { appraise, ownedCharacters, userCharacterCount } from "../../game/characters";
 import { slotIncome } from "../../game/economy";
+import { isRare, traitOf } from "../../game/traits";
 import { html, raw } from "../dom";
 
 export function renderRoster(state: GameState): string {
@@ -10,12 +11,17 @@ export function renderRoster(state: GameState): string {
 	const cards = mine
 		.map((c) => {
 			const seated = state.slots.includes(c.id);
+			const trait = traitOf(c);
 			return html`
 			<article class="card" style="--accent:${c.color}">
 				<img class="ava ava--md" src="${c.avatar}" alt="${c.name}" />
 				<div class="card__body">
 					<h3>${c.name} ${raw(seated ? '<span class="tag tag--live">응원 중</span>' : "")}</h3>
-					<p class="muted">${c.agency} · ${c.origin === "user" ? "내가 등록" : "영입"}</p>
+					<p class="muted">
+						<span class="trait ${isRare(trait) ? "trait--rare" : ""}">${trait.icon} ${trait.name}</span>
+						${c.agency} · ${c.origin === "user" ? "내가 등록" : "영입"}
+					</p>
+					<p class="muted small">${trait.desc}</p>
 					<div class="kv">
 						<span>인기도 <b>${fmt(c.popularity)}</b></span>
 						<span>주가 <b>${coin(c.price)}</b></span>

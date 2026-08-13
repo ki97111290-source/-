@@ -43,6 +43,7 @@ export function startAuction(state: GameState, rng: Rng): void {
 			origin: "seed",
 			popularity: range(rng, 1, 8),
 			holder: pick(rng, RIVAL_NAMES),
+			rng,
 		});
 		state.characters[rookie.id] = rookie;
 		target = rookie;
@@ -183,6 +184,7 @@ function settle(state: GameState): void {
 		state.owned.push(auction.characterId);
 		if (character) character.holder = OWNER_ME;
 		auction.escrow = 0;
+		state.auctionWins += 1;
 		pushLog(
 			state,
 			`축하합니다! ${name}을(를) ${fmtInt(auction.currentBid)} C에 낙찰받았습니다.`,

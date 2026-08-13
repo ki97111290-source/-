@@ -1,5 +1,6 @@
 import { type Rng, makeRng } from "../core/rng";
 import type { GameState } from "../core/types";
+import { checkAchievements } from "./achievements";
 import { tickAuction } from "./auction";
 import { BALANCE } from "./balance";
 import { addCoins, incomePerSecond, offlineEfficiency, tickEconomy } from "./economy";
@@ -71,6 +72,7 @@ export class Engine {
 		tickEconomy(this.state, dt);
 		tickMarket(this.state, dt, this.rng);
 		tickAuction(this.state, dt, this.rng);
+		checkAchievements(this.state);
 	}
 
 	private persist(dt: number): void {

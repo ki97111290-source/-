@@ -3,6 +3,7 @@ import type { GameState } from "../../core/types";
 import { minimumBid } from "../../game/auction";
 import { BALANCE, OWNER_ME } from "../../game/balance";
 import { appraise } from "../../game/characters";
+import { isRare, traitOf } from "../../game/traits";
 import { html, raw } from "../dom";
 import { ui } from "../uiState";
 
@@ -42,7 +43,13 @@ export function renderAuction(state: GameState): string {
 				<img class="ava ava--xl" src="${character.avatar}" alt="${character.name}" />
 				<div class="lot__info">
 					<h2>${character.name}</h2>
-					<p class="muted">${character.agency} · 현 소유자 ${character.holder}</p>
+					<p class="muted">
+						<span class="trait ${isRare(traitOf(character)) ? "trait--rare" : ""}">
+							${traitOf(character).icon} ${traitOf(character).name}
+						</span>
+						${character.agency} · 현 소유자 ${character.holder}
+					</p>
+					<p class="muted small">${traitOf(character).desc}</p>
 					<div class="kv">
 						<span>인기도 <b>${fmt(character.popularity)}</b></span>
 						<span>감정가 <b>${coin(appraise(character))}</b></span>

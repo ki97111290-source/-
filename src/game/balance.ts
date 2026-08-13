@@ -13,6 +13,14 @@ export const BALANCE = {
 	cheerPopularity: 0.9,
 	/** 클릭 응원이 즉시 주는 코인 = 초당 수입 * 이 배수 */
 	cheerBurst: 2.5,
+	/** 콤보가 유지되는 시간(초) */
+	comboWindow: 2.2,
+	/** 콤보 1단계마다 붙는 배수 */
+	comboStep: 0.04,
+	/** 콤보 상한 (×3까지) */
+	comboMax: 50,
+	/** 명성 1점당 전체 수입 보너스 */
+	famePerPoint: 0.03,
 	/** 인기도 자연 감소(초당 비율) */
 	popularityDecay: 0.0009,
 	/** 화제성 자연 감소(초당 비율) */

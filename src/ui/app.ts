@@ -4,7 +4,7 @@ import { buyUpgrade, seat, uploadCharacter } from "../game/actions";
 import { consign, placePlayerBid } from "../game/auction";
 import { fileToAvatar } from "../game/avatar";
 import { ownedCharacters } from "../game/characters";
-import { cheer, incomePerSecond, slotIncome } from "../game/economy";
+import { incomePerSecond, slotIncome, tapCheer } from "../game/economy";
 import type { Engine } from "../game/engine";
 import { buyShares, sellShares } from "../game/market";
 import { clearSave, exportSave, importSave, saveGame } from "../game/save";
@@ -199,9 +199,8 @@ function onClick(event: MouseEvent, engine: Engine): void {
 			break;
 
 		case "cheer": {
-			const before = state.coins;
-			cheer(state, id);
-			floatGain(event.clientX, event.clientY, state.coins - before);
+			const gained = tapCheer(state, id);
+			floatGain(event.clientX, event.clientY, gained, state.combo.count);
 			break;
 		}
 
@@ -343,12 +342,12 @@ function submitUpload(engine: Engine): void {
 	}
 }
 
-/** 클릭 지점에 코인 획득량을 띄운다. */
-function floatGain(x: number, y: number, amount: number): void {
+/** 클릭 지점에 코인 획득량을 띄운다. 콤보가 붙으면 더 크고 뜨겁게. */
+function floatGain(x: number, y: number, amount: number, combo: number): void {
 	if (amount <= 0) return;
 	const el = document.createElement("span");
-	el.className = "floatgain";
-	el.textContent = `+${coin(amount)}`;
+	el.className = combo >= 10 ? "floatgain floatgain--hot" : "floatgain";
+	el.textContent = combo >= 2 ? `+${coin(amount)} ×${combo}` : `+${coin(amount)}`;
 	el.style.left = `${x}px`;
 	el.style.top = `${y}px`;
 	document.body.appendChild(el);

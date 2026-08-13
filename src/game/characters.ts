@@ -1,7 +1,8 @@
 import { type Rng, range, uid } from "../core/rng";
-import type { Character, GameState } from "../core/types";
+import type { Character, GameState, TraitId } from "../core/types";
 import { colorFor, makeAvatar } from "./avatar";
 import { BALANCE, OWNER_ME } from "./balance";
+import { rollTrait, traitOf } from "./traits";
 
 interface SeedDef {
 	name: string;
@@ -42,7 +43,10 @@ export function fairPrice(character: Character): number {
 
 /** 캐릭터 전체를 통째로 사고팔 때의 감정가 (경매 기준가) */
 export function appraise(character: Character): number {
-	return Math.max(120, fairPrice(character) * character.shares * 0.28);
+	return Math.max(
+		120,
+		fairPrice(character) * character.shares * 0.28 * traitOf(character).appraisal,
+	);
 }
 
 export function createCharacter(init: {
@@ -52,6 +56,8 @@ export function createCharacter(init: {
 	origin?: Character["origin"];
 	popularity?: number;
 	holder?: string;
+	trait?: TraitId;
+	rng?: Rng;
 }): Character {
 	const name = init.name.trim().slice(0, 16) || "이름없는 신인";
 	const popularity = init.popularity ?? 1;
@@ -62,6 +68,7 @@ export function createCharacter(init: {
 		color: colorFor(name),
 		avatar: init.avatar ?? makeAvatar(name),
 		origin: init.origin ?? "user",
+		trait: init.trait ?? rollTrait(init.rng ?? Math.random),
 		popularity,
 		hype: 0,
 		shares: BALANCE.baseShares,
@@ -83,6 +90,7 @@ export function seedCharacters(rng: Rng): Character[] {
 			origin: "seed",
 			popularity: seed.popularity * range(rng, 0.85, 1.15),
 			holder: RIVAL_NAMES[i % RIVAL_NAMES.length] ?? "익명의 큰손",
+			rng,
 		}),
 	);
 }

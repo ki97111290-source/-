@@ -3,7 +3,7 @@ import type { GameState, LogEntry, UpgradeId } from "../core/types";
 import { BALANCE, OWNER_ME } from "./balance";
 import { createCharacter, seedCharacters } from "./characters";
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export function createNewGame(): GameState {
 	const seed = (Math.random() * 2 ** 32) >>> 0;
@@ -25,6 +25,11 @@ export function createNewGame(): GameState {
 		auction: null,
 		nextAuctionIn: 25,
 		nextDividendIn: BALANCE.dividendPeriod,
+		combo: { count: 0, until: 0 },
+		achievements: [],
+		fame: 0,
+		bestCombo: 0,
+		auctionWins: 0,
 		log: [],
 		seed,
 	};
@@ -40,6 +45,8 @@ export function createNewGame(): GameState {
 		origin: "seed",
 		popularity: 2,
 		holder: OWNER_ME,
+		trait: "rookie",
+		rng,
 	});
 	state.characters[starter.id] = starter;
 	state.owned.push(starter.id);

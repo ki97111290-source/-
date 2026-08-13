@@ -1,5 +1,16 @@
+import { makeRng } from "../core/rng";
 import type { GameState } from "../core/types";
 import { SAVE_VERSION, createNewGame, syncSlots } from "./state";
+import { rollTrait } from "./traits";
+
+function hashName(str: string): number {
+	let h = 2166136261;
+	for (let i = 0; i < str.length; i++) {
+		h ^= str.charCodeAt(i);
+		h = Math.imul(h, 16777619);
+	}
+	return h >>> 0;
+}
 
 const KEY = "fandom-tycoon:save:v1";
 
@@ -71,8 +82,15 @@ function migrate(raw: Partial<GameState>): GameState | null {
 	for (const character of Object.values(state.characters)) {
 		character.history = Array.isArray(character.history) ? character.history : [character.price];
 		character.hype = Number.isFinite(character.hype) ? character.hype : 0;
+		// v1 세이브에는 성격이 없다. 이름 기준으로 한 번만 정해 계속 같은 성격이 나오게 한다.
+		if (!character.trait) character.trait = rollTrait(makeRng(hashName(character.id)));
 	}
 
+	state.combo = raw.combo ?? { count: 0, until: 0 };
+	state.achievements = Array.isArray(raw.achievements) ? raw.achievements : [];
+	state.fame = Number.isFinite(raw.fame) ? (raw.fame as number) : 0;
+	state.bestCombo = Number.isFinite(raw.bestCombo) ? (raw.bestCombo as number) : 0;
+	state.auctionWins = Number.isFinite(raw.auctionWins) ? (raw.auctionWins as number) : 0;
 	state.coins = Number.isFinite(state.coins) ? state.coins : 0;
 	state.lastTick = Number.isFinite(state.lastTick) ? state.lastTick : Date.now();
 	syncSlots(state);

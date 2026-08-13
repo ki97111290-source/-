@@ -4,6 +4,7 @@ import { BALANCE } from "./balance";
 import { fairPrice } from "./characters";
 import { addCoins } from "./economy";
 import { pushLog, upgradeLevel } from "./state";
+import { traitOf } from "./traits";
 
 const HISTORY_LEN = 48;
 const HISTORY_INTERVAL = 4; // 초
@@ -43,7 +44,8 @@ export function tickMarket(state: GameState, dt: number, rng: Rng): void {
 	for (const character of Object.values(state.characters)) {
 		const fair = fairPrice(character);
 		const pull = (fair - character.price) * 0.12 * dt;
-		const noise = character.price * gaussian(rng) * 0.012 * Math.sqrt(dt);
+		const noise =
+			character.price * gaussian(rng) * 0.012 * traitOf(character).volatility * Math.sqrt(dt);
 		character.price = Math.max(1, character.price + pull + noise);
 	}
 
@@ -116,7 +118,12 @@ function tickDividend(state: GameState, dt: number): void {
 		if (!character || holding.shares <= 0) continue;
 		// 인기가 식은 캐릭터는 배당도 줄어든다.
 		const health = Math.min(1.5, 0.4 + character.popularity / 60);
-		total += holding.shares * character.price * BALANCE.dividendRate * health;
+		total +=
+			holding.shares *
+			character.price *
+			BALANCE.dividendRate *
+			health *
+			traitOf(character).dividend;
 	}
 	total *= dividendMultiplier(state);
 	if (total > 0) {
