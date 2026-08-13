@@ -9,16 +9,14 @@ export const BALANCE = {
 	baseIncome: 1.2,
 	/** 인기도가 수입에 반영되는 정도: 1 + pop * incomeFromPopularity */
 	incomeFromPopularity: 0.02,
-	/** 클릭 응원이 올려주는 인기도 */
+	/** 응원 1회가 올려주는 인기도 */
 	cheerPopularity: 0.9,
-	/** 클릭 응원이 즉시 주는 코인 = 초당 수입 * 이 배수 */
+	/** 응원 1회가 주는 코인 = 그 캐릭터의 초당 수입 * 이 배수 */
 	cheerBurst: 2.5,
-	/** 콤보가 유지되는 시간(초) */
-	comboWindow: 2.2,
-	/** 콤보 1단계마다 붙는 배수 */
-	comboStep: 0.04,
-	/** 콤보 상한 (×3까지) */
-	comboMax: 50,
+	/** 업그레이드 없이도 돌아가는 기본 응원 속도(회/초) */
+	baseCheerRate: 1,
+	/** 응원 속도 업그레이드 레벨당 추가 회/초 */
+	cheerRatePerLevel: 0.6,
 	/** 명성 1점당 전체 수입 보너스 */
 	famePerPoint: 0.03,
 	/** 인기도 자연 감소(초당 비율) */
@@ -63,21 +61,22 @@ export interface UpgradeDef {
 export const UPGRADES: readonly UpgradeDef[] = [
 	{
 		id: "cheerPower",
-		name: "응원봉 강화",
+		name: "응원 화력",
 		icon: "🔦",
 		baseCost: 60,
 		growth: 1.18,
 		maxLevel: 200,
-		desc: (l) => `클릭 응원 위력 ×${(1 + l * 0.35).toFixed(2)}`,
+		desc: (l) => `응원 1회 위력 ×${(1 + l * 0.35).toFixed(2)}`,
 	},
 	{
 		id: "autoCheer",
-		name: "자동 응원 봇",
+		name: "응원 속도",
 		icon: "🤖",
 		baseCost: 240,
 		growth: 1.26,
 		maxLevel: 100,
-		desc: (l) => (l === 0 ? "초당 자동 응원 0회" : `초당 자동 응원 ${(l * 0.5).toFixed(1)}회`),
+		desc: (l) =>
+			`초당 응원 ${(BALANCE.baseCheerRate + l * BALANCE.cheerRatePerLevel).toFixed(1)}회`,
 	},
 	{
 		id: "slot",

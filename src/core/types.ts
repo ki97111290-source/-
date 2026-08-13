@@ -65,13 +65,6 @@ export interface AuctionState {
 	rivals: { name: string; budget: number; nextBidIn: number }[];
 }
 
-/** 연속 응원 콤보. 손으로 누른 응원만 쌓인다. */
-export interface ComboState {
-	count: number;
-	/** 이 시각(ms)까지 이어서 누르면 콤보 유지 */
-	until: number;
-}
-
 export interface LogEntry {
 	at: number;
 	text: string;
@@ -104,13 +97,10 @@ export interface GameState {
 	/** 다음 배당까지 남은 시간(초) */
 	nextDividendIn: number;
 
-	combo: ComboState;
 	/** 달성한 도전 과제 id */
 	achievements: string[];
 	/** 도전 과제로 쌓는 명성. 전체 수입에 영구 보너스를 준다. */
 	fame: number;
-	/** 최고 콤보 기록 */
-	bestCombo: number;
 	/** 경매 낙찰 횟수 */
 	auctionWins: number;
 

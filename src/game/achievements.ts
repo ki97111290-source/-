@@ -1,4 +1,5 @@
 import type { GameState } from "../core/types";
+import { incomePerSecond } from "./economy";
 import { pushLog } from "./state";
 import { isRare, traitOf } from "./traits";
 
@@ -29,6 +30,10 @@ function topPopularity(state: GameState): number {
 	return best;
 }
 
+function filledSeats(state: GameState): number {
+	return state.slots.filter(Boolean).length;
+}
+
 function heldStocks(state: GameState): number {
 	return Object.values(state.portfolio).filter((h) => h.shares > 0).length;
 }
@@ -55,24 +60,34 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		progress: (s) => ratio(s.totalCheers, 5000),
 	},
 	{
-		id: "combo-30",
-		name: "손이 매워요",
-		desc: "30 콤보 달성",
-		icon: "⚡",
+		id: "seats-3",
+		name: "무인 방송국",
+		desc: "응원석 3자리를 채우기",
+		icon: "🪑",
 		fame: 2,
 		coins: 3_000,
-		done: (s) => s.bestCombo >= 30,
-		progress: (s) => ratio(s.bestCombo, 30),
+		done: (s) => filledSeats(s) >= 3,
+		progress: (s) => ratio(filledSeats(s), 3),
 	},
 	{
-		id: "combo-50",
-		name: "응원봉 장인",
-		desc: "50 콤보 달성",
-		icon: "🌟",
+		id: "income-100",
+		name: "24시간 편성",
+		desc: "초당 수입 100 C",
+		icon: "⚡",
 		fame: 4,
 		coins: 30_000,
-		done: (s) => s.bestCombo >= 50,
-		progress: (s) => ratio(s.bestCombo, 50),
+		done: (s) => incomePerSecond(s) >= 100,
+		progress: (s) => ratio(incomePerSecond(s), 100),
+	},
+	{
+		id: "income-2000",
+		name: "잠든 사이에도",
+		desc: "초당 수입 2,000 C",
+		icon: "🌌",
+		fame: 7,
+		coins: 300_000,
+		done: (s) => incomePerSecond(s) >= 2000,
+		progress: (s) => ratio(incomePerSecond(s), 2000),
 	},
 	{
 		id: "upload-1",

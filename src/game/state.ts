@@ -25,10 +25,8 @@ export function createNewGame(): GameState {
 		auction: null,
 		nextAuctionIn: 25,
 		nextDividendIn: BALANCE.dividendPeriod,
-		combo: { count: 0, until: 0 },
 		achievements: [],
 		fame: 0,
-		bestCombo: 0,
 		auctionWins: 0,
 		log: [],
 		seed,
@@ -52,7 +50,7 @@ export function createNewGame(): GameState {
 	state.owned.push(starter.id);
 	state.slots[0] = starter.id;
 
-	pushLog(state, "응원 룸이 열렸습니다. 최애를 응원해 코인을 모아보세요!", "good");
+	pushLog(state, "응원 룸이 열렸습니다. 켜두기만 하면 응원이 알아서 돌아가요.", "good");
 	pushLog(state, "‘캐릭터’ 탭에서 내 최애를 직접 업로드할 수 있어요.", "info");
 	return state;
 }

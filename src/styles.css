@@ -419,14 +419,7 @@ button:focus-visible {
 }
 
 .slot--live {
-	cursor: pointer;
-	user-select: none;
-	-webkit-user-select: none;
-	-webkit-tap-highlight-color: transparent;
 	border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-}
-.slot--live:active {
-	transform: scale(0.985);
 }
 
 .slot__glow {
@@ -458,70 +451,6 @@ button:focus-visible {
 .slot--empty,
 .slot--locked {
 	border-style: dashed;
-}
-
-/* ---------- 콤보 ---------- */
-
-.combo {
-	display: grid;
-	grid-template-columns: auto 1fr;
-	grid-template-areas: "num mult" "bar bar";
-	align-items: center;
-	gap: 4px 10px;
-	border-radius: 12px;
-	padding: 8px 12px;
-	min-height: 46px;
-	border: 1px solid var(--line);
-	background: var(--panel);
-	transition: border-color 0.15s;
-}
-
-.combo--idle {
-	display: flex;
-	justify-content: center;
-	font-size: 12px;
-	border-style: dashed;
-}
-
-.combo--on {
-	border-color: var(--accent-2);
-	background: linear-gradient(90deg, rgba(255, 92, 157, 0.16), rgba(124, 92, 255, 0.1));
-}
-
-.combo__num {
-	grid-area: num;
-	font-size: 20px;
-	font-weight: 800;
-	color: var(--gold);
-	font-variant-numeric: tabular-nums;
-	line-height: 1;
-}
-.combo__num span {
-	font-size: 11px;
-	letter-spacing: 0.08em;
-	color: var(--muted);
-}
-
-.combo__mult {
-	grid-area: mult;
-	text-align: right;
-	font-weight: 800;
-	color: var(--accent-2);
-	font-variant-numeric: tabular-nums;
-}
-
-.combo__bar {
-	grid-area: bar;
-	height: 4px;
-	background: rgba(255, 255, 255, 0.08);
-	border-radius: 999px;
-	overflow: hidden;
-}
-.combo__bar i {
-	display: block;
-	height: 100%;
-	background: linear-gradient(90deg, var(--gold), var(--accent-2));
-	transition: width 0.1s linear;
 }
 
 /* ---------- 성격 배지 ---------- */
@@ -973,12 +902,6 @@ button:focus-visible {
 	color: var(--gold);
 	text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 	animation: floatup 0.75s ease-out forwards;
-}
-
-.floatgain--hot {
-	font-size: 19px;
-	color: var(--accent-2);
-	text-shadow: 0 0 14px rgba(255, 92, 157, 0.7);
 }
 
 @keyframes floatup {

@@ -76,12 +76,12 @@ export function renderShop(state: GameState): string {
 			<div class="statrow">
 				<div class="stat"><span>총 자산</span><b>${coin(netWorth(state))}</b></div>
 				<div class="stat"><span>누적 수입</span><b>${coin(state.totalEarned)}</b></div>
-				<div class="stat"><span>최고 콤보</span><b>${state.bestCombo}</b></div>
+				<div class="stat"><span>누적 응원</span><b>${fmt(state.totalCheers)}회</b></div>
 				<div class="stat"><span>플레이 시간</span><b>${duration(played)}</b></div>
 			</div>
 			<p class="hint">
-				자리를 비워도 초당 수입의 ${Math.round(offlineEfficiency(state) * 100)}%가 최대 8시간까지 쌓입니다.
-				누적 응원 ${fmt(state.totalCheers)}회.
+				페이지를 켜두면 수입 100%가 그대로 들어옵니다. 브라우저 탭이 뒤로 밀려도 마찬가지예요.
+				완전히 닫아둔 동안에는 ${Math.round(offlineEfficiency(state) * 100)}%가 최대 8시간까지 쌓입니다.
 			</p>
 
 			<h2 class="section-title">데이터</h2>

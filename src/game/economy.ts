@@ -3,7 +3,7 @@ import { BALANCE } from "./balance";
 import { upgradeLevel } from "./state";
 import { traitOf } from "./traits";
 
-/** 응원석에 앉은 캐릭터 한 명이 벌어들이는 초당 코인 (명성 보너스 제외) */
+/** 응원석에 앉은 캐릭터 한 명의 기본 초당 코인 (명성·응원 제외) */
 export function slotIncome(character: Character): number {
 	return (
 		BALANCE.baseIncome *
@@ -17,11 +17,14 @@ export function fameMultiplier(state: GameState): number {
 	return 1 + state.fame * BALANCE.famePerPoint;
 }
 
-/** 현재 응원 룸 전체의 초당 수입 */
-export function incomePerSecond(state: GameState): number {
+export function occupiedSlots(state: GameState): string[] {
+	return state.slots.filter((id): id is string => Boolean(id));
+}
+
+/** 응원석에 앉아 있기만 해도 들어오는 초당 코인 */
+export function passiveIncome(state: GameState): number {
 	let total = 0;
-	for (const id of state.slots) {
-		if (!id) continue;
+	for (const id of occupiedSlots(state)) {
 		const character = state.characters[id];
 		if (character) total += slotIncome(character);
 	}
@@ -32,18 +35,51 @@ export function cheerMultiplier(state: GameState): number {
 	return 1 + upgradeLevel(state, "cheerPower") * 0.35;
 }
 
-/** 연속 응원으로 붙는 배수 (최대 ×3) */
-export function comboMultiplier(state: GameState, now = Date.now()): number {
-	if (state.combo.until < now) return 1;
-	return 1 + Math.min(state.combo.count, BALANCE.comboMax) * BALANCE.comboStep;
+/** 룸 전체의 초당 응원 횟수. 업그레이드 없이도 기본값만큼 돌아간다. */
+export function cheersPerSecond(state: GameState): number {
+	return BALANCE.baseCheerRate + upgradeLevel(state, "autoCheer") * BALANCE.cheerRatePerLevel;
 }
 
-export function comboActive(state: GameState, now = Date.now()): boolean {
-	return state.combo.until > now && state.combo.count > 0;
+/** 캐릭터 한 명이 초당 받는 응원 횟수 */
+export function cheersPerSlot(state: GameState): number {
+	const count = occupiedSlots(state).length;
+	return count === 0 ? 0 : cheersPerSecond(state) / count;
 }
 
-export function autoCheersPerSecond(state: GameState): number {
-	return upgradeLevel(state, "autoCheer") * 0.5;
+/** 자동 응원이 만들어내는 초당 코인 */
+export function cheerIncome(state: GameState): number {
+	const perSlot = cheersPerSlot(state);
+	if (perSlot <= 0) return 0;
+	let total = 0;
+	for (const id of occupiedSlots(state)) {
+		const character = state.characters[id];
+		if (character) total += slotIncome(character) * BALANCE.cheerBurst * perSlot;
+	}
+	return total * cheerMultiplier(state) * fameMultiplier(state);
+}
+
+/** 화면에 보여주는 실제 총 초당 수입 */
+export function incomePerSecond(state: GameState): number {
+	return passiveIncome(state) + cheerIncome(state);
+}
+
+/** 룸 전체에서 초당 오르는 인기도 (응원석에 앉은 캐릭터 합산) */
+export function popularityPerSecond(state: GameState): number {
+	const perSlot = cheersPerSlot(state);
+	if (perSlot <= 0) return 0;
+	let total = 0;
+	for (const id of occupiedSlots(state)) {
+		const character = state.characters[id];
+		if (character) total += popularityGain(state, character, perSlot);
+	}
+	return total;
+}
+
+function popularityGain(state: GameState, character: Character, power: number): number {
+	return (
+		(BALANCE.cheerPopularity * cheerMultiplier(state) * power * traitOf(character).popGain) /
+		(1 + character.popularity * 0.02)
+	);
 }
 
 export function offlineEfficiency(state: GameState): number {
@@ -56,46 +92,29 @@ export function addCoins(state: GameState, amount: number): void {
 }
 
 /**
- * 응원 1회. 코인이 즉시 들어오고 캐릭터의 인기도/화제성이 오른다.
+ * 응원. power는 "응원 몇 회분인가"를 뜻하며 소수도 들어온다.
  * 인기도가 높을수록 같은 응원의 체감 효과는 줄어든다(소프트 캡).
  */
 export function cheer(state: GameState, characterId: string, power = 1): void {
 	const character = state.characters[characterId];
 	if (!character) return;
-	const trait = traitOf(character);
 	const mult = cheerMultiplier(state) * power;
 
-	const gain = (BALANCE.cheerPopularity * mult * trait.popGain) / (1 + character.popularity * 0.02);
-	character.popularity += gain;
+	character.popularity += popularityGain(state, character, power);
 	character.hype += 0.12 * mult;
 
 	addCoins(state, slotIncome(character) * BALANCE.cheerBurst * mult * fameMultiplier(state));
 	state.totalCheers += power;
 }
 
-/** 손으로 누른 응원. 콤보가 쌓이고 그만큼 배수가 붙는다. */
-export function tapCheer(state: GameState, characterId: string, now = Date.now()): number {
-	const before = state.coins;
-	if (state.combo.until >= now) state.combo.count += 1;
-	else state.combo.count = 1;
-	state.combo.until = now + BALANCE.comboWindow * 1000;
-	if (state.combo.count > state.bestCombo) state.bestCombo = state.combo.count;
-
-	cheer(state, characterId, comboMultiplier(state, now));
-	return state.coins - before;
-}
-
 /** 매 시뮬레이션 스텝마다 도는 기본 경제 로직 */
-export function tickEconomy(state: GameState, dt: number, now = Date.now()): void {
-	addCoins(state, incomePerSecond(state) * dt);
-	if (state.combo.until < now && state.combo.count !== 0) state.combo.count = 0;
+export function tickEconomy(state: GameState, dt: number): void {
+	addCoins(state, passiveIncome(state) * dt);
 
-	// 자동 응원은 응원석에 앉은 캐릭터에게 골고루 들어간다. (콤보는 붙지 않는다)
-	const occupied = state.slots.filter((id): id is string => Boolean(id));
-	const autoCheers = autoCheersPerSecond(state) * dt;
-	if (autoCheers > 0 && occupied.length > 0) {
-		const each = autoCheers / occupied.length;
-		for (const id of occupied) cheer(state, id, each * 0.6);
+	// 응원은 켜두기만 하면 알아서 돌아간다. 응원석에 앉은 캐릭터에게 골고루 들어간다.
+	const perSlot = cheersPerSlot(state) * dt;
+	if (perSlot > 0) {
+		for (const id of occupiedSlots(state)) cheer(state, id, perSlot);
 	}
 
 	// 인기도와 화제성은 가만두면 식는다. 성격에 따라 식는 속도가 다르다.
@@ -113,7 +132,7 @@ export interface OfflineReport {
 	capped: boolean;
 }
 
-/** 접속하지 않은 동안의 수입을 정산한다. */
+/** 페이지를 닫아둔 동안의 수입을 정산한다. (켜둔 동안은 100%, 닫으면 효율 적용) */
 export function applyOffline(state: GameState, now = Date.now()): OfflineReport | null {
 	const elapsed = (now - state.lastTick) / 1000;
 	if (!Number.isFinite(elapsed) || elapsed < 60) {

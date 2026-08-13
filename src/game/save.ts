@@ -3,6 +3,9 @@ import type { GameState } from "../core/types";
 import { SAVE_VERSION, createNewGame, syncSlots } from "./state";
 import { rollTrait } from "./traits";
 
+/** 더 이상 존재하지 않는 과제 id (콤보 시스템 제거) */
+const RETIRED_ACHIEVEMENTS = new Set(["combo-30", "combo-50"]);
+
 function hashName(str: string): number {
 	let h = 2166136261;
 	for (let i = 0; i < str.length; i++) {
@@ -86,11 +89,15 @@ function migrate(raw: Partial<GameState>): GameState | null {
 		if (!character.trait) character.trait = rollTrait(makeRng(hashName(character.id)));
 	}
 
-	state.combo = raw.combo ?? { count: 0, until: 0 };
-	state.achievements = Array.isArray(raw.achievements) ? raw.achievements : [];
+	state.achievements = Array.isArray(raw.achievements)
+		? raw.achievements.filter((id) => !RETIRED_ACHIEVEMENTS.has(id))
+		: [];
 	state.fame = Number.isFinite(raw.fame) ? (raw.fame as number) : 0;
-	state.bestCombo = Number.isFinite(raw.bestCombo) ? (raw.bestCombo as number) : 0;
 	state.auctionWins = Number.isFinite(raw.auctionWins) ? (raw.auctionWins as number) : 0;
+	// 콤보 시스템이 사라졌으므로 예전 세이브의 흔적을 지운다.
+	for (const key of ["combo", "bestCombo"]) {
+		delete (state as unknown as Record<string, unknown>)[key];
+	}
 	state.coins = Number.isFinite(state.coins) ? state.coins : 0;
 	state.lastTick = Number.isFinite(state.lastTick) ? state.lastTick : Date.now();
 	syncSlots(state);

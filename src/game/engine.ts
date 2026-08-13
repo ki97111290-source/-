@@ -3,7 +3,14 @@ import type { GameState } from "../core/types";
 import { checkAchievements } from "./achievements";
 import { tickAuction } from "./auction";
 import { BALANCE } from "./balance";
-import { addCoins, incomePerSecond, offlineEfficiency, tickEconomy } from "./economy";
+import {
+	addCoins,
+	cheer,
+	cheersPerSlot,
+	incomePerSecond,
+	occupiedSlots,
+	tickEconomy,
+} from "./economy";
 import { tickMarket } from "./market";
 import { saveGame } from "./save";
 import { syncSlots } from "./state";
@@ -51,9 +58,11 @@ export class Engine {
 		if (!Number.isFinite(dt) || dt <= 0) return;
 
 		if (dt > IDLE_GAP) {
-			// 백그라운드 탭: 매 스텝 돌리는 대신 오프라인 효율로 한 번에 정산한다.
+			// 브라우저가 백그라운드 탭의 프레임을 늦춘 경우다. 페이지는 켜져 있으므로
+			// 감산 없이 100% 정산한다. (효율이 깎이는 건 페이지를 닫았을 때뿐)
 			const seconds = Math.min(dt, BALANCE.offlineCap);
-			addCoins(this.state, incomePerSecond(this.state) * seconds * offlineEfficiency(this.state));
+			addCoins(this.state, incomePerSecond(this.state) * seconds);
+			this.growPopularity(seconds);
 			this.step(BALANCE.step);
 			this.persist(AUTOSAVE);
 			return;
@@ -66,6 +75,22 @@ export class Engine {
 			this.step(BALANCE.step);
 		}
 		this.persist(dt);
+	}
+
+	/** 프레임이 오래 멈춘 구간의 인기도 상승을 한 번에 반영한다. */
+	private growPopularity(seconds: number): void {
+		const perSlot = cheersPerSlot(this.state) * seconds;
+		if (perSlot <= 0) return;
+		for (const id of occupiedSlots(this.state)) {
+			const character = this.state.characters[id];
+			if (!character) continue;
+			// 코인은 위에서 이미 정산했으므로 인기도만 올린다.
+			const coins = this.state.coins;
+			const earned = this.state.totalEarned;
+			cheer(this.state, id, perSlot);
+			this.state.coins = coins;
+			this.state.totalEarned = earned;
+		}
 	}
 
 	private step(dt: number): void {

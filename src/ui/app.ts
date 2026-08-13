@@ -3,8 +3,15 @@ import type { GameState } from "../core/types";
 import { buyUpgrade, seat, uploadCharacter } from "../game/actions";
 import { consign, placePlayerBid } from "../game/auction";
 import { fileToAvatar } from "../game/avatar";
+import { BALANCE } from "../game/balance";
 import { ownedCharacters } from "../game/characters";
-import { incomePerSecond, slotIncome, tapCheer } from "../game/economy";
+import {
+	cheerMultiplier,
+	cheersPerSlot,
+	fameMultiplier,
+	incomePerSecond,
+	slotIncome,
+} from "../game/economy";
 import type { Engine } from "../game/engine";
 import { buyShares, sellShares } from "../game/market";
 import { clearSave, exportSave, importSave, saveGame } from "../game/save";
@@ -49,6 +56,7 @@ export function mountApp(root: HTMLElement, engine: Engine): void {
 		if (now - lastRender < RENDER_INTERVAL) return;
 		lastRender = now;
 		render(refs, engine.state);
+		spawnIdleGains(refs.view, engine.state, Date.now());
 	});
 	render(refs, engine.state);
 	// 첫 진입 직후 탭을 닫아도 진행이 남도록 한 번 저장해 둔다.
@@ -198,12 +206,6 @@ function onClick(event: MouseEvent, engine: Engine): void {
 			closeModals();
 			break;
 
-		case "cheer": {
-			const gained = tapCheer(state, id);
-			floatGain(event.clientX, event.clientY, gained, state.combo.count);
-			break;
-		}
-
 		case "open-picker":
 			ui.pickerSlot = Number(actionEl.dataset.slot ?? "0");
 			ui.pickerList = snapshotOwned(state);
@@ -342,16 +344,53 @@ function submitUpload(engine: Engine): void {
 	}
 }
 
-/** 클릭 지점에 코인 획득량을 띄운다. 콤보가 붙으면 더 크고 뜨겁게. */
-function floatGain(x: number, y: number, amount: number, combo: number): void {
+/** 화면 좌표에 코인 획득량을 띄운다. */
+function floatGain(x: number, y: number, amount: number): void {
 	if (amount <= 0) return;
 	const el = document.createElement("span");
-	el.className = combo >= 10 ? "floatgain floatgain--hot" : "floatgain";
-	el.textContent = combo >= 2 ? `+${coin(amount)} ×${combo}` : `+${coin(amount)}`;
+	el.className = "floatgain";
+	el.textContent = `+${coin(amount)}`;
 	el.style.left = `${x}px`;
 	el.style.top = `${y}px`;
 	document.body.appendChild(el);
 	el.addEventListener("animationend", () => el.remove());
+}
+
+/** 응원석 위로 자동 응원 수입이 계속 떠오르게 한다. 방치형의 유일한 "손맛". */
+const nextFloatAt = new Map<string, number>();
+
+function spawnIdleGains(view: HTMLElement, state: GameState, now: number): void {
+	if (ui.tab !== "room" || document.hidden) return;
+	const perSlot = cheersPerSlot(state);
+	if (perSlot <= 0) return;
+
+	// 응원이 아무리 빨라져도 화면은 초당 2회 정도만 갱신한다.
+	const interval = Math.max(500, 1000 / Math.min(perSlot, 2));
+	for (const el of view.querySelectorAll<HTMLElement>(".slot--live")) {
+		const id = el.dataset.slotId;
+		if (!id) continue;
+		const due = nextFloatAt.get(id);
+		// 처음 본 카드는 시각만 잡아두고 다음 주기부터 띄운다.
+		if (due === undefined) {
+			nextFloatAt.set(id, now + interval);
+			continue;
+		}
+		if (now < due) continue;
+		nextFloatAt.set(id, now + interval);
+
+		const character = state.characters[id];
+		if (!character) continue;
+		const perSecond =
+			slotIncome(character) *
+			(1 + BALANCE.cheerBurst * perSlot * cheerMultiplier(state)) *
+			fameMultiplier(state);
+		const rect = el.getBoundingClientRect();
+		floatGain(
+			rect.left + rect.width / 2 + (Math.random() * 44 - 22),
+			rect.top + rect.height * 0.38,
+			perSecond * (interval / 1000),
+		);
+	}
 }
 
 function exportToFile(state: GameState): void {
