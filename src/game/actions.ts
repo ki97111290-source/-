@@ -1,7 +1,7 @@
 import type { GameState, UpgradeId } from "../core/types";
 import { UPGRADES, upgradeCost } from "./balance";
 import { BALANCE } from "./balance";
-import { createCharacter, userCharacterCount } from "./characters";
+import { createCharacter } from "./characters";
 import { pushLog, syncSlots, upgradeLevel } from "./state";
 
 export interface ActionResult {
@@ -15,7 +15,7 @@ export function uploadCharacter(
 	input: { name: string; agency: string; avatar?: string },
 ): ActionResult {
 	if (!input.name.trim()) return { ok: false, message: "이름을 입력해주세요." };
-	if (userCharacterCount(state) >= BALANCE.maxUserCharacters) {
+	if (state.meta.roster.length >= BALANCE.maxUserCharacters) {
 		return {
 			ok: false,
 			message: `업로드는 최대 ${BALANCE.maxUserCharacters}명까지 가능해요.`,
@@ -31,12 +31,19 @@ export function uploadCharacter(
 	});
 	state.characters[character.id] = character;
 	state.owned.push(character.id);
+	// 보관함에 남겨 두면 시즌이 바뀌어도 같은 캐릭터로 다시 데뷔한다.
+	state.meta.roster.push({
+		name: character.name,
+		agency: character.agency,
+		avatar: character.avatar,
+		trait: character.trait,
+	});
 
 	syncSlots(state);
 	const idx = state.slots.indexOf(null);
 	if (idx >= 0) state.slots[idx] = character.id;
 
-	pushLog(state, `${character.name} 데뷔! 응원해서 인기도를 올려보세요.`, "good");
+	pushLog(state, `${character.name} 데뷔! 응원석에 앉히면 인기도가 오릅니다.`, "good");
 	return { ok: true, message: `${character.name}을(를) 등록했어요.` };
 }
 

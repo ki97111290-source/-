@@ -1,4 +1,6 @@
-export type TabId = "room" | "roster" | "auction" | "market" | "shop";
+import type { SeasonReport } from "../game/season";
+
+export type TabId = "room" | "roster" | "auction" | "market" | "season" | "shop";
 
 export interface Toast {
 	text: string;
@@ -31,6 +33,8 @@ export interface UiState {
 	/** 종목별 주문 수량 입력값 */
 	qty: Record<string, string>;
 	toast: Toast | null;
+	/** 시즌이 넘어간 직후 보여줄 결과 */
+	seasonReport: SeasonReport | null;
 }
 
 export const ui: UiState = {
@@ -45,6 +49,7 @@ export const ui: UiState = {
 	bid: "",
 	qty: {},
 	toast: null,
+	seasonReport: null,
 };
 
 export function toast(text: string, kind: Toast["kind"] = "info"): void {
@@ -62,5 +67,6 @@ export const TABS: { id: TabId; label: string; icon: string }[] = [
 	{ id: "roster", label: "캐릭터", icon: "🎀" },
 	{ id: "auction", label: "경매장", icon: "🔨" },
 	{ id: "market", label: "주식", icon: "📈" },
+	{ id: "season", label: "시즌", icon: "🏆" },
 	{ id: "shop", label: "상점", icon: "🛠" },
 ];

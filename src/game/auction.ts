@@ -1,7 +1,7 @@
 import { type Rng, pick, range } from "../core/rng";
 import type { AuctionState, GameState } from "../core/types";
 import { BALANCE, OWNER_ME } from "./balance";
-import { RIVAL_NAMES, appraise, createCharacter } from "./characters";
+import { RIVAL_NAMES, appraise, createCharacter, pruneCharacters } from "./characters";
 import { addCoins } from "./economy";
 import { pushLog, syncSlots } from "./state";
 
@@ -200,6 +200,7 @@ function settle(state: GameState): void {
 
 	state.auction = null;
 	state.nextAuctionIn = BALANCE.auctionPeriod;
+	pruneCharacters(state);
 }
 
 /** 빈 응원석이 있으면 새 캐릭터를 바로 앉힌다. */

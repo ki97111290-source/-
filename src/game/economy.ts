@@ -1,5 +1,6 @@
 import type { Character, GameState } from "../core/types";
 import { BALANCE } from "./balance";
+import { honorMultiplier } from "./season";
 import { upgradeLevel } from "./state";
 import { traitOf } from "./traits";
 
@@ -12,9 +13,14 @@ export function slotIncome(character: Character): number {
 	);
 }
 
-/** 도전 과제로 쌓은 명성이 주는 전체 수입 배수 */
+/** 이번 시즌에 쌓은 명성이 주는 수입 배수 (시즌이 끝나면 사라진다) */
 export function fameMultiplier(state: GameState): number {
 	return 1 + state.fame * BALANCE.famePerPoint;
+}
+
+/** 명성(시즌) × 명예(트로피, 영구)를 합친 전체 수입 배수 */
+export function bonusMultiplier(state: GameState): number {
+	return fameMultiplier(state) * honorMultiplier(state.meta);
 }
 
 export function occupiedSlots(state: GameState): string[] {
@@ -28,7 +34,7 @@ export function passiveIncome(state: GameState): number {
 		const character = state.characters[id];
 		if (character) total += slotIncome(character);
 	}
-	return total * fameMultiplier(state);
+	return total * bonusMultiplier(state);
 }
 
 export function cheerMultiplier(state: GameState): number {
@@ -55,7 +61,7 @@ export function cheerIncome(state: GameState): number {
 		const character = state.characters[id];
 		if (character) total += slotIncome(character) * BALANCE.cheerBurst * perSlot;
 	}
-	return total * cheerMultiplier(state) * fameMultiplier(state);
+	return total * cheerMultiplier(state) * bonusMultiplier(state);
 }
 
 /** 화면에 보여주는 실제 총 초당 수입 */
@@ -103,8 +109,9 @@ export function cheer(state: GameState, characterId: string, power = 1): void {
 	character.popularity += popularityGain(state, character, power);
 	character.hype += 0.12 * mult;
 
-	addCoins(state, slotIncome(character) * BALANCE.cheerBurst * mult * fameMultiplier(state));
+	addCoins(state, slotIncome(character) * BALANCE.cheerBurst * mult * bonusMultiplier(state));
 	state.totalCheers += power;
+	state.seasonCheers += power;
 }
 
 /** 매 시뮬레이션 스텝마다 도는 기본 경제 로직 */
@@ -144,7 +151,13 @@ export function applyOffline(state: GameState, now = Date.now()): OfflineReport 
 	const coins = incomePerSecond(state) * seconds * offlineEfficiency(state);
 
 	addCoins(state, coins);
-	// 오랫동안 응원이 끊기면 인기도도 그만큼 식는다.
+	// 닫아둔 동안에도 응원 횟수는 같은 효율로 쌓인다. 트로피 진행이 완전히 멈추면
+	// "켜두면 되는 게임"이 "24시간 켜둬야 하는 게임"이 되어버린다.
+	const offlineCheers = cheersPerSecond(state) * seconds * offlineEfficiency(state);
+	state.totalCheers += offlineCheers;
+	state.seasonCheers += offlineCheers;
+
+	// 다만 인기도는 오르지 않는다. 오랫동안 응원이 끊기면 오히려 식는다.
 	for (const character of Object.values(state.characters)) {
 		const decay = BALANCE.popularityDecay * traitOf(character).decay * seconds * 0.5;
 		character.popularity = Math.max(0.5, character.popularity * (1 - decay));

@@ -1,7 +1,7 @@
 import { coin, fmt } from "../../core/format";
 import type { GameState } from "../../core/types";
 import { BALANCE } from "../../game/balance";
-import { appraise, ownedCharacters, userCharacterCount } from "../../game/characters";
+import { appraise, ownedCharacters } from "../../game/characters";
 import { slotIncome } from "../../game/economy";
 import { isRare, traitOf } from "../../game/traits";
 import { html, raw } from "../dom";
@@ -42,7 +42,7 @@ export function renderRoster(state: GameState): string {
 			<header class="panel__head">
 				<div>
 					<h2>내 캐릭터 ${mine.length}명</h2>
-					<p class="muted">업로드 ${userCharacterCount(state)} / ${BALANCE.maxUserCharacters}명</p>
+					<p class="muted">보관함 ${state.meta.roster.length} / ${BALANCE.maxUserCharacters}명 · 시즌이 바뀌어도 유지돼요</p>
 				</div>
 				<button class="btn btn--primary" data-action="open-upload">＋ 최애 업로드</button>
 			</header>

@@ -65,6 +65,34 @@ export interface AuctionState {
 	rivals: { name: string; budget: number; nextBidIn: number }[];
 }
 
+export type TrophyTierId = "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master";
+
+export interface Trophy {
+	seasonId: string;
+	tier: TrophyTierId;
+	/** 그 시즌에 쌓은 응원 수 */
+	cheers: number;
+	awardedAt: number;
+}
+
+/** 시즌이 바뀌어도 남는 캐릭터 원본 */
+export interface RosterEntry {
+	name: string;
+	agency: string;
+	avatar: string;
+	trait: TraitId;
+}
+
+/** 시즌 리셋을 넘어 계속 유지되는 데이터 */
+export interface MetaState {
+	trophies: Trophy[];
+	/** 내가 업로드한 캐릭터 보관함. 매 시즌 다시 데뷔한다. */
+	roster: RosterEntry[];
+	seasonsPlayed: number;
+	/** 역대 최고 시즌 응원 수 */
+	bestCheers: number;
+}
+
 export interface LogEntry {
 	at: number;
 	text: string;
@@ -76,6 +104,13 @@ export interface GameState {
 	/** 저장 시각(ms). 오프라인 보상 계산에 쓴다. */
 	lastTick: number;
 	startedAt: number;
+
+	/** 현재 시즌 id ("2026-08"). 바뀌면 시즌이 초기화된다. */
+	seasonId: string;
+	/** 이번 시즌에 쌓은 응원 수. 트로피 등급을 정한다. */
+	seasonCheers: number;
+	/** 시즌을 넘어 유지되는 데이터 */
+	meta: MetaState;
 
 	coins: number;
 	totalEarned: number;

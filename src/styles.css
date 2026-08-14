@@ -453,6 +453,163 @@ button:focus-visible {
 	border-style: dashed;
 }
 
+/* ---------- 시즌 & 트로피 ---------- */
+
+.brand__season {
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted);
+	letter-spacing: 0;
+}
+
+.seasonhead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.seasonhead__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--tier) 55%, transparent);
+	background: color-mix(in srgb, var(--tier) 14%, transparent);
+	color: var(--tier);
+	font-weight: 700;
+	font-size: 13px;
+}
+.seasonhead__badge--none {
+	color: var(--muted);
+}
+.seasonhead__icon {
+	font-size: 20px;
+}
+
+.goal {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 12px;
+	align-items: center;
+	background: var(--panel);
+	border: 1px solid color-mix(in srgb, var(--tier) 45%, var(--line));
+	border-radius: var(--radius);
+	padding: 12px;
+}
+.goal__icon {
+	font-size: 30px;
+}
+.goal__body {
+	display: grid;
+	gap: 6px;
+	min-width: 0;
+}
+.goal__body h3 {
+	font-size: 14px;
+	color: var(--tier);
+}
+.goal__bar {
+	height: 6px;
+	background: rgba(255, 255, 255, 0.08);
+	border-radius: 999px;
+	overflow: hidden;
+}
+.goal__bar i {
+	display: block;
+	height: 100%;
+	background: linear-gradient(90deg, var(--accent), var(--tier));
+}
+
+.tiers {
+	display: grid;
+	gap: 5px;
+}
+
+.tier {
+	display: grid;
+	grid-template-columns: auto 68px 1fr auto;
+	gap: 10px;
+	align-items: center;
+	padding: 7px 12px;
+	border-radius: 10px;
+	background: var(--panel);
+	border: 1px solid var(--line);
+	font-size: 13px;
+	opacity: 0.62;
+}
+.tier--on {
+	opacity: 1;
+	border-color: color-mix(in srgb, var(--tier) 55%, transparent);
+	background: color-mix(in srgb, var(--tier) 10%, var(--panel));
+}
+.tier__icon {
+	font-size: 18px;
+}
+.tier__name {
+	font-weight: 700;
+	color: var(--tier);
+}
+.tier__pt {
+	font-size: 12px;
+	color: var(--muted);
+	white-space: nowrap;
+}
+
+.cabinet {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+	gap: 8px;
+}
+
+.trophy {
+	display: grid;
+	justify-items: center;
+	gap: 2px;
+	text-align: center;
+	padding: 12px 8px;
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--tier) 10%, var(--panel));
+	border: 1px solid color-mix(in srgb, var(--tier) 45%, var(--line));
+}
+.trophy b {
+	color: var(--tier);
+	font-size: 13px;
+}
+.trophy__icon {
+	font-size: 30px;
+}
+
+.sheet--center {
+	justify-items: center;
+	text-align: center;
+}
+
+.bigtrophy {
+	display: grid;
+	justify-items: center;
+	gap: 6px;
+	padding: 20px 24px;
+	border-radius: 16px;
+	background: color-mix(in srgb, var(--tier) 14%, var(--panel));
+	border: 1px solid color-mix(in srgb, var(--tier) 55%, transparent);
+	width: 100%;
+}
+.bigtrophy span {
+	font-size: 56px;
+	line-height: 1;
+}
+.bigtrophy b {
+	color: var(--tier);
+	font-size: 17px;
+}
+.bigtrophy--none {
+	--tier: var(--muted);
+}
+
 /* ---------- 성격 배지 ---------- */
 
 .trait {

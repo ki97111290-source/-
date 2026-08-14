@@ -1,4 +1,5 @@
 import { type Rng, makeRng } from "../core/rng";
+import { seasonLabel } from "../core/season";
 import type { GameState } from "../core/types";
 import { checkAchievements } from "./achievements";
 import { tickAuction } from "./auction";
@@ -13,7 +14,8 @@ import {
 } from "./economy";
 import { tickMarket } from "./market";
 import { saveGame } from "./save";
-import { syncSlots } from "./state";
+import { type SeasonReport, rolloverIfNeeded, tierOf } from "./season";
+import { createNewGame, pushLog, syncSlots } from "./state";
 
 const MAX_FRAME = 0.25;
 /** 이보다 오래 프레임이 멈췄으면 탭이 백그라운드였다고 보고 요약 정산한다. */
@@ -27,6 +29,8 @@ export class Engine {
 	private saveTimer = 0;
 	private last = performance.now();
 	private running = false;
+	/** 시즌이 넘어갔을 때 UI에 알리는 콜백 */
+	onSeasonEnd: ((report: SeasonReport) => void) | null = null;
 
 	constructor(state: GameState) {
 		this.state = state;
@@ -98,6 +102,31 @@ export class Engine {
 		tickMarket(this.state, dt, this.rng);
 		tickAuction(this.state, dt, this.rng);
 		checkAchievements(this.state);
+		this.checkSeason();
+	}
+
+	/** 켜둔 채로 한국시간 1일 00:00을 넘기면 그 자리에서 시즌이 바뀐다. */
+	private checkSeason(): void {
+		const report = rolloverIfNeeded(this.state, createNewGame);
+		if (!report) return;
+
+		const cheers = Math.floor(report.cheers).toLocaleString("ko-KR");
+		if (report.trophy) {
+			const tier = tierOf(report.trophy.tier);
+			pushLog(
+				this.state,
+				`${seasonLabel(report.endedSeason)} 종료 — ${tier.icon} ${tier.name} 트로피 획득! (시즌 응원 ${cheers}회)`,
+				"good",
+			);
+		} else {
+			pushLog(
+				this.state,
+				`${seasonLabel(report.endedSeason)} 종료 — 시즌 응원 ${cheers}회, 트로피 기준에 닿지 못했어요.`,
+				"info",
+			);
+		}
+		this.onSeasonEnd?.(report);
+		this.saveNow();
 	}
 
 	private persist(dt: number): void {

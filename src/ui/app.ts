@@ -1,4 +1,5 @@
 import { coin, fmt, rate } from "../core/format";
+import { remainingLabel, seasonRemaining } from "../core/season";
 import type { GameState } from "../core/types";
 import { buyUpgrade, seat, uploadCharacter } from "../game/actions";
 import { consign, placePlayerBid } from "../game/auction";
@@ -23,6 +24,7 @@ import { renderMarket } from "./views/market";
 import { renderModal } from "./views/modals";
 import { renderRoom } from "./views/room";
 import { renderRoster } from "./views/roster";
+import { renderSeason, renderSeasonModal } from "./views/season";
 import { renderShop } from "./views/shop";
 
 const RENDER_INTERVAL = 100;
@@ -49,6 +51,12 @@ export function mountApp(root: HTMLElement, engine: Engine): void {
 	};
 
 	bindEvents(root, engine);
+
+	engine.onSeasonEnd = (report) => {
+		ui.seasonReport = report;
+		closeModals();
+		ui.tab = "season";
+	};
 
 	let lastRender = 0;
 	engine.start(() => {
@@ -80,7 +88,10 @@ function render(refs: Refs, state: GameState): void {
 	paint(
 		refs.hud,
 		html`
-			<div class="brand"><span class="brand__mark">✦</span> 버츄얼 팬덤 타이쿤</div>
+			<div class="brand">
+				<span class="brand__mark">✦</span> 버츄얼 팬덤 타이쿤
+				<span class="brand__season">${seasonLabelShort(state)} · ${remainingLabel(seasonRemaining())} 남음</span>
+			</div>
 			<div class="wallet">
 				<div class="wallet__coin">${coin(state.coins)}</div>
 				<div class="wallet__sub">${rate(incomePerSecond(state))} · 자산 ${coin(netWorth(state))}</div>
@@ -100,7 +111,7 @@ function render(refs: Refs, state: GameState): void {
 	);
 
 	paint(refs.view, renderView(state));
-	paint(refs.modal, renderModal());
+	paint(refs.modal, ui.seasonReport ? renderSeasonModal(ui.seasonReport) : renderModal());
 
 	paint(
 		refs.log,
@@ -127,6 +138,8 @@ function renderView(state: GameState): string {
 			return renderAuction(state);
 		case "market":
 			return renderMarket(state);
+		case "season":
+			return renderSeason(state);
 		case "shop":
 			return renderShop(state);
 	}
@@ -164,6 +177,11 @@ async function onChange(event: Event): Promise<void> {
 	} catch (err) {
 		ui.uploadError = err instanceof Error ? err.message : "이미지를 처리하지 못했어요.";
 	}
+}
+
+function seasonLabelShort(state: GameState): string {
+	const month = Number(state.seasonId.split("-")[1] ?? 0);
+	return month ? `${month}월 시즌` : "시즌";
 }
 
 function fieldValue(id: string): string {
@@ -213,6 +231,10 @@ function onClick(event: MouseEvent, engine: Engine): void {
 
 		case "close-picker":
 			closeModals();
+			break;
+
+		case "close-season":
+			ui.seasonReport = null;
 			break;
 
 		case "seat": {

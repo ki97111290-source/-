@@ -41,6 +41,8 @@ export const BALANCE = {
 	tradeFee: 0.01,
 	/** 캐릭터 1주 발행 기본 수 */
 	baseShares: 1000,
+	/** 시장에 유지하는 캐릭터 수 상한. 넘으면 관심 없는 캐릭터부터 정리한다. */
+	marketSize: 26,
 	/** 업로드 가능한 내 캐릭터 최대 수 (저장 용량 보호) */
 	maxUserCharacters: 24,
 	/** 로그 최대 보관 수 */

@@ -1,10 +1,37 @@
 import { makeRng } from "../core/rng";
-import type { GameState } from "../core/types";
+import { currentSeasonId } from "../core/season";
+import type { GameState, MetaState } from "../core/types";
+import { emptyMeta } from "./season";
 import { SAVE_VERSION, createNewGame, syncSlots } from "./state";
 import { rollTrait } from "./traits";
 
 /** 더 이상 존재하지 않는 과제 id (콤보 시스템 제거) */
 const RETIRED_ACHIEVEMENTS = new Set(["combo-30", "combo-50"]);
+
+/**
+ * 시즌 이전 세이브에는 meta가 없다. 그동안 업로드해 둔 캐릭터를 잃지 않도록
+ * 현재 판에 있는 내 업로드 캐릭터를 보관함으로 옮겨준다.
+ */
+function normalizeMeta(raw: MetaState | undefined, state: GameState): MetaState {
+	const meta = emptyMeta();
+	if (raw && typeof raw === "object") {
+		meta.trophies = Array.isArray(raw.trophies) ? raw.trophies : [];
+		meta.roster = Array.isArray(raw.roster) ? raw.roster : [];
+		meta.seasonsPlayed = Number.isFinite(raw.seasonsPlayed) ? raw.seasonsPlayed : 0;
+		meta.bestCheers = Number.isFinite(raw.bestCheers) ? raw.bestCheers : 0;
+		return meta;
+	}
+	for (const character of Object.values(state.characters ?? {})) {
+		if (character.origin !== "user") continue;
+		meta.roster.push({
+			name: character.name,
+			agency: character.agency,
+			avatar: character.avatar,
+			trait: character.trait,
+		});
+	}
+	return meta;
+}
 
 function hashName(str: string): number {
 	let h = 2166136261;
@@ -89,6 +116,11 @@ function migrate(raw: Partial<GameState>): GameState | null {
 		if (!character.trait) character.trait = rollTrait(makeRng(hashName(character.id)));
 	}
 
+	state.meta = normalizeMeta(raw.meta, state);
+	state.seasonId = typeof raw.seasonId === "string" ? raw.seasonId : currentSeasonId();
+	state.seasonCheers = Number.isFinite(raw.seasonCheers)
+		? (raw.seasonCheers as number)
+		: (state.totalCheers ?? 0);
 	state.achievements = Array.isArray(raw.achievements)
 		? raw.achievements.filter((id) => !RETIRED_ACHIEVEMENTS.has(id))
 		: [];

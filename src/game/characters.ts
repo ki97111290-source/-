@@ -107,7 +107,34 @@ export function isOwned(state: GameState, id: string): boolean {
 	return state.owned.includes(id);
 }
 
-/** 내가 업로드한 캐릭터 수 */
-export function userCharacterCount(state: GameState): number {
-	return allCharacters(state).filter((c) => c.origin === "user").length;
+/**
+ * 경매마다 신인이 데뷔하므로 그대로 두면 캐릭터가 끝없이 늘어난다.
+ * 한 시즌만 돌려도 수천 명이 되어 세이브가 부풀고 주식 목록이 못 쓰게 된다.
+ * 내가 관여하지 않은(보유·주주·경매중·내가 올린) 캐릭터부터 인기 낮은 순으로 정리한다.
+ */
+export function pruneCharacters(state: GameState): number {
+	const ids = Object.keys(state.characters);
+	if (ids.length <= BALANCE.marketSize) return 0;
+
+	const protectedIds = new Set<string>(state.owned);
+	if (state.auction) protectedIds.add(state.auction.characterId);
+	for (const [id, holding] of Object.entries(state.portfolio)) {
+		if (holding.shares > 0) protectedIds.add(id);
+	}
+	for (const id of state.slots) if (id) protectedIds.add(id);
+
+	const removable = ids
+		.filter((id) => !protectedIds.has(id) && state.characters[id]?.origin !== "user")
+		.sort(
+			(a, b) => (state.characters[a]?.popularity ?? 0) - (state.characters[b]?.popularity ?? 0),
+		);
+
+	const excess = ids.length - BALANCE.marketSize;
+	let removed = 0;
+	for (const id of removable) {
+		if (removed >= excess) break;
+		delete state.characters[id];
+		removed++;
+	}
+	return removed;
 }
