@@ -7,7 +7,11 @@ import { rolloverIfNeeded, tierOf } from "./game/season";
 import { createNewGame, pushLog } from "./game/state";
 import "./styles.css";
 import { mountApp } from "./ui/app";
+import { initTheme } from "./ui/theme";
 import { ui } from "./ui/uiState";
+
+// 화면이 그려지기 전에 테마를 정해야 깜빡임이 없다
+initTheme();
 
 const root = document.getElementById("app");
 if (!root) throw new Error("#app 을 찾지 못했습니다");

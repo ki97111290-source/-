@@ -18,6 +18,7 @@ import { buyShares, sellShares } from "../game/market";
 import { clearSave, exportSave, importSave, saveGame } from "../game/save";
 import { netWorth } from "../game/state";
 import { html, paint } from "./dom";
+import { effectiveTheme, toggleTheme } from "./theme";
 import { type PickItem, TABS, type TabId, closeModals, toast, ui } from "./uiState";
 import { renderAuction } from "./views/auctionView";
 import { renderMarket } from "./views/market";
@@ -92,9 +93,18 @@ function render(refs: Refs, state: GameState): void {
 				<span class="brand__mark">✦</span> 버츄얼 팬덤 타이쿤
 				<span class="brand__season">${seasonLabelShort(state)} · ${remainingLabel(remainingOf(state.seasonEndsAt))} 남음</span>
 			</div>
-			<div class="wallet">
-				<div class="wallet__coin">${coin(state.coins)}</div>
-				<div class="wallet__sub">${rate(incomePerSecond(state))} · 자산 ${coin(netWorth(state))}</div>
+			<div class="hud__right">
+				<button
+					class="iconbtn"
+					type="button"
+					data-action="theme"
+					title="${effectiveTheme() === "dark" ? "밝은 화면으로" : "어두운 화면으로"}"
+					aria-label="${effectiveTheme() === "dark" ? "밝은 화면으로 전환" : "어두운 화면으로 전환"}"
+				>${effectiveTheme() === "dark" ? "☀️" : "🌙"}</button>
+				<div class="wallet">
+					<div class="wallet__coin">${coin(state.coins)}</div>
+					<div class="wallet__sub">${rate(incomePerSecond(state))} · 자산 ${coin(netWorth(state))}</div>
+				</div>
 			</div>
 		`,
 	);
@@ -236,6 +246,10 @@ function onClick(event: MouseEvent, engine: Engine): void {
 
 		case "close-season":
 			ui.seasonReport = null;
+			break;
+
+		case "theme":
+			toast(toggleTheme() === "dark" ? "어두운 화면" : "밝은 화면");
 			break;
 
 		case "seat": {

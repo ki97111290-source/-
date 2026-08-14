@@ -62,7 +62,7 @@ function row(state: GameState, c: Character): string {
 					🔥 ${fmt(c.popularity)}
 				</span>
 			</div>
-			<div class="row__spark">${raw(sparkline(c.history, change >= 0 ? "#4ade80" : "#f87171"))}</div>
+			<div class="row__spark">${raw(sparkline(c.history, change >= 0 ? "var(--good)" : "var(--bad)"))}</div>
 			<div class="row__price">
 				<b>${coin(c.price)}</b>
 				<span class="${change >= 0 ? "up" : "down"}">${pct(change)}</span>
