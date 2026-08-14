@@ -1,5 +1,5 @@
 import { makeRng } from "../core/rng";
-import { currentSeasonId } from "../core/season";
+import { SEASON_MODE, newSeasonBounds } from "../core/season";
 import type { GameState, MetaState } from "../core/types";
 import { emptyMeta } from "./season";
 import { SAVE_VERSION, createNewGame, syncSlots } from "./state";
@@ -31,6 +31,29 @@ function normalizeMeta(raw: MetaState | undefined, state: GameState): MetaState 
 		});
 	}
 	return meta;
+}
+
+/**
+ * 시즌 범위를 맞춘다. 시즌 이전 세이브에는 아예 없고, local ↔ calendar 모드를
+ * 바꾼 직후에는 예전 기준이 남아 있다. 둘 다 지금 기준으로 다시 잡아준다.
+ * (온라인 전환 시 이 경로를 타고 모두가 달력 시즌으로 옮겨간다)
+ */
+function applySeasonBounds(state: GameState, raw: Partial<GameState>): void {
+	const id = typeof raw.seasonId === "string" ? raw.seasonId : "";
+	const isLocalId = id.startsWith("local-");
+	const modeMatches = id !== "" && isLocalId === (SEASON_MODE === "local");
+	const hasBounds = Number.isFinite(raw.seasonStartedAt) && Number.isFinite(raw.seasonEndsAt);
+
+	if (modeMatches && hasBounds) {
+		state.seasonId = id;
+		state.seasonStartedAt = raw.seasonStartedAt as number;
+		state.seasonEndsAt = raw.seasonEndsAt as number;
+		return;
+	}
+	const bounds = newSeasonBounds();
+	state.seasonId = bounds.id;
+	state.seasonStartedAt = bounds.startMs;
+	state.seasonEndsAt = bounds.endMs;
 }
 
 function hashName(str: string): number {
@@ -117,10 +140,10 @@ function migrate(raw: Partial<GameState>): GameState | null {
 	}
 
 	state.meta = normalizeMeta(raw.meta, state);
-	state.seasonId = typeof raw.seasonId === "string" ? raw.seasonId : currentSeasonId();
 	state.seasonCheers = Number.isFinite(raw.seasonCheers)
 		? (raw.seasonCheers as number)
 		: (state.totalCheers ?? 0);
+	applySeasonBounds(state, raw);
 	state.achievements = Array.isArray(raw.achievements)
 		? raw.achievements.filter((id) => !RETIRED_ACHIEVEMENTS.has(id))
 		: [];

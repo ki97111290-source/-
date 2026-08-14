@@ -1,11 +1,12 @@
 import { fmt } from "../../core/format";
 import {
+	SEASON_MODE,
+	progressOf,
 	remainingLabel,
+	remainingOf,
 	seasonLabel,
-	seasonProgress,
-	seasonRemaining,
-	seasonWeek,
-	weekUnlockIn,
+	seasonWeekOf,
+	weekUnlockInOf,
 } from "../../core/season";
 import type { GameState } from "../../core/types";
 import { TROPHY_TIERS, honorMultiplier, nextTrophy, tierOf, trophyFor } from "../../game/season";
@@ -22,8 +23,8 @@ export function renderSeason(state: GameState): string {
 		<section class="panel">
 			<header class="seasonhead">
 				<div>
-					<h2>${seasonLabel(state.seasonId)}</h2>
-					<p class="muted">종료까지 ${remainingLabel(seasonRemaining(now))} · 한국시간 매달 1일 00:00 초기화</p>
+					<h2>${seasonTitle(state)}</h2>
+					<p class="muted">종료까지 ${remainingLabel(remainingOf(state.seasonEndsAt, now))} · ${resetRule()}</p>
 				</div>
 				<div class="seasonhead__badge ${current ? "" : "seasonhead__badge--none"}"
 					style="--tier:${current?.color ?? "#3a4170"}">
@@ -31,9 +32,9 @@ export function renderSeason(state: GameState): string {
 					<span>${current ? current.name : "기록 없음"}</span>
 				</div>
 			</header>
-			<div class="timer"><div class="timer__bar" style="width:${((1 - seasonProgress(now)) * 100).toFixed(1)}%"></div></div>
+			<div class="timer"><div class="timer__bar" style="width:${((1 - progressOf(state.seasonStartedAt, state.seasonEndsAt, now)) * 100).toFixed(1)}%"></div></div>
 
-			${raw(weekLine())}
+			${raw(weekLine(state))}
 
 			<div class="statrow">
 				<div class="stat"><span>시즌 응원</span><b>${fmt(cheers)}회</b></div>
@@ -59,9 +60,21 @@ export function renderSeason(state: GameState): string {
 	`;
 }
 
+/** 지금 시즌 이름. local 모드는 몇 번째 시즌인지로 부른다. */
+function seasonTitle(state: GameState): string {
+	if (SEASON_MODE === "local") return `시즌 ${state.meta.seasonsPlayed + 1}`;
+	return seasonLabel(state.seasonId);
+}
+
+function resetRule(): string {
+	return SEASON_MODE === "local"
+		? "시작한 날로부터 30일 뒤 초기화"
+		: "한국시간 매달 1일 00:00 초기화";
+}
+
 /** 이번 주차에 무엇이 열려 있고 다음이 언제인지 */
-function weekLine(): string {
-	const week = seasonWeek();
+function weekLine(state: GameState): string {
+	const week = seasonWeekOf(state.seasonStartedAt);
 	const plan = [
 		"1주차 · 인프라를 까는 주간",
 		"2주차 · 핵심 설비 해금",
@@ -70,7 +83,7 @@ function weekLine(): string {
 	];
 	const next =
 		week < 3
-			? html`<span class="muted small">${remainingLabel(weekUnlockIn(week + 1))} 후 ${plan[week + 1]}</span>`
+			? html`<span class="muted small">${remainingLabel(weekUnlockInOf(state.seasonStartedAt, week + 1))} 후 ${plan[week + 1]}</span>`
 			: '<span class="muted small">더 살 설비가 없습니다. 주식과 경매로 불리세요.</span>';
 	return html`
 		<div class="weekbar">
@@ -113,7 +126,7 @@ function tierRow(id: string, cheers: number): string {
 function cabinet(state: GameState): string {
 	const trophies = [...state.meta.trophies].reverse();
 	if (trophies.length === 0) {
-		return `<p class="muted">아직 트로피가 없습니다. 이번 시즌이 첫 트로피예요.</p>`;
+		return `<p class="muted cabinet__empty">아직 트로피가 없습니다. 이번 시즌이 첫 트로피예요.</p>`;
 	}
 	return trophies
 		.map((trophy) => {

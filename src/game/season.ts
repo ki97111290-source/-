@@ -1,4 +1,4 @@
-import { currentSeasonId } from "../core/season";
+import { type SeasonBounds, newSeasonBounds } from "../core/season";
 import type { GameState, MetaState, Trophy, TrophyTierId } from "../core/types";
 
 export interface TrophyTier {
@@ -77,16 +77,16 @@ export interface SeasonReport {
 }
 
 /**
- * 시즌이 넘어갔으면 정산하고 판을 새로 깐다.
+ * 시즌이 끝났으면 정산하고 판을 새로 깐다.
+ * 종료 판정은 state.seasonEndsAt 하나로만 하므로 local/calendar 모드가 같은 코드를 쓴다.
  * state를 그 자리에서 갈아끼우므로 Engine이 들고 있는 참조는 그대로 살아 있다.
  */
 export function rolloverIfNeeded(
 	state: GameState,
-	rebuild: (meta: MetaState, seasonId: string, now: number) => GameState,
+	rebuild: (meta: MetaState, bounds: SeasonBounds, now: number) => GameState,
 	now = Date.now(),
 ): SeasonReport | null {
-	const seasonId = currentSeasonId(now);
-	if (seasonId === state.seasonId) return null;
+	if (!Number.isFinite(state.seasonEndsAt) || now < state.seasonEndsAt) return null;
 
 	const ended = state.seasonId;
 	const cheers = state.seasonCheers;
@@ -101,12 +101,13 @@ export function rolloverIfNeeded(
 	meta.seasonsPlayed += 1;
 	meta.bestCheers = Math.max(meta.bestCheers, cheers);
 
-	const fresh = rebuild(meta, seasonId, now);
+	const bounds = newSeasonBounds(now);
+	const fresh = rebuild(meta, bounds, now);
 	// 참조를 유지해야 하므로 새 객체로 바꾸지 않고 내용만 갈아끼운다.
 	for (const key of Object.keys(state)) {
 		delete (state as unknown as Record<string, unknown>)[key];
 	}
 	Object.assign(state, fresh);
 
-	return { endedSeason: ended, cheers, trophy, newSeason: seasonId };
+	return { endedSeason: ended, cheers, trophy, newSeason: bounds.id };
 }

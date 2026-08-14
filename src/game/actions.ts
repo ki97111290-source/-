@@ -1,4 +1,4 @@
-import { seasonWeek } from "../core/season";
+import { seasonWeekOf } from "../core/season";
 import type { GameState, UpgradeId } from "../core/types";
 import { TIER_NAMES, UPGRADES, upgradeCost } from "./balance";
 import { BALANCE } from "./balance";
@@ -51,7 +51,7 @@ export function uploadCharacter(
 export function buyUpgrade(state: GameState, id: UpgradeId, now = Date.now()): ActionResult {
 	const def = UPGRADES.find((u) => u.id === id);
 	if (!def) return { ok: false, message: "없는 업그레이드예요." };
-	if (seasonWeek(now) < def.tier) {
+	if (seasonWeekOf(state.seasonStartedAt, now) < def.tier) {
 		return { ok: false, message: `${TIER_NAMES[def.tier]}에 열립니다.` };
 	}
 	const level = upgradeLevel(state, id);

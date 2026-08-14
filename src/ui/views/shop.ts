@@ -1,5 +1,5 @@
 import { coin, duration, fmt } from "../../core/format";
-import { remainingLabel, seasonWeek, weekUnlockIn } from "../../core/season";
+import { remainingLabel, seasonWeekOf, weekUnlockInOf } from "../../core/season";
 import type { GameState } from "../../core/types";
 import { ACHIEVEMENTS } from "../../game/achievements";
 import { TIER_NAMES, UPGRADES, type UpgradeTier, upgradeCost } from "../../game/balance";
@@ -14,7 +14,7 @@ const TIER_HINTS: Record<UpgradeTier, string> = {
 };
 
 export function renderShop(state: GameState): string {
-	const week = seasonWeek();
+	const week = seasonWeekOf(state.seasonStartedAt);
 	const played = (Date.now() - state.startedAt) / 1000;
 	const tiers = ([0, 1, 2] as UpgradeTier[]).map((tier) => tierBlock(state, tier, week)).join("");
 
@@ -76,7 +76,7 @@ function tierBlock(state: GameState, tier: UpgradeTier, week: number): string {
 	const complete = done === defs.length;
 
 	const head = locked
-		? html`<span class="muted">🔒 ${remainingLabel(weekUnlockIn(tier))} 후 해금</span>`
+		? html`<span class="muted">🔒 ${remainingLabel(weekUnlockInOf(state.seasonStartedAt, tier))} 후 해금</span>`
 		: html`<span class="${complete ? "up" : "muted"}">${done} / ${defs.length} 완료</span>`;
 
 	const cards = locked

@@ -114,8 +114,12 @@ export interface GameState {
 	lastTick: number;
 	startedAt: number;
 
-	/** 현재 시즌 id ("2026-08"). 바뀌면 시즌이 초기화된다. */
+	/** 현재 시즌 id. calendar 모드는 "2026-08", local 모드는 "local-2026-08-14" */
 	seasonId: string;
+	/** 시즌이 시작된 시각(ms). 주차 해금의 기준점이다. */
+	seasonStartedAt: number;
+	/** 시즌이 끝나는 시각(ms). 이 시각을 넘기면 초기화된다. */
+	seasonEndsAt: number;
 	/** 이번 시즌에 쌓은 응원 수. 트로피 등급을 정한다. */
 	seasonCheers: number;
 	/** 시즌을 넘어 유지되는 데이터 */

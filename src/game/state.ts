@@ -1,5 +1,5 @@
 import { makeRng } from "../core/rng";
-import { currentSeasonId } from "../core/season";
+import { type SeasonBounds, newSeasonBounds } from "../core/season";
 import type { GameState, LogEntry, MetaState, UpgradeId } from "../core/types";
 import { BALANCE, OWNER_ME } from "./balance";
 import { createCharacter, seedCharacters } from "./characters";
@@ -13,7 +13,7 @@ export const SAVE_VERSION = 3;
  */
 export function createNewGame(
 	meta: MetaState = emptyMeta(),
-	seasonId: string = currentSeasonId(),
+	bounds: SeasonBounds = newSeasonBounds(),
 	now: number = Date.now(),
 ): GameState {
 	const seed = (Math.random() * 2 ** 32) >>> 0;
@@ -23,7 +23,9 @@ export function createNewGame(
 		version: SAVE_VERSION,
 		lastTick: now,
 		startedAt: now,
-		seasonId,
+		seasonId: bounds.id,
+		seasonStartedAt: bounds.startMs,
+		seasonEndsAt: bounds.endMs,
 		seasonCheers: 0,
 		meta,
 		coins: 0,

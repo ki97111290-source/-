@@ -565,6 +565,10 @@ button:focus-visible {
 	gap: 8px;
 }
 
+.cabinet__empty {
+	grid-column: 1 / -1;
+}
+
 .trophy {
 	display: grid;
 	justify-items: center;

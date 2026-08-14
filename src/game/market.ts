@@ -1,5 +1,5 @@
 import { type Rng, gaussian, pick } from "../core/rng";
-import { seasonWeek } from "../core/season";
+import { seasonWeekOf } from "../core/season";
 import type { Character, GameState } from "../core/types";
 import { BALANCE } from "./balance";
 import { fairPrice } from "./characters";
@@ -20,7 +20,7 @@ export function dividendMultiplier(state: GameState, now = Date.now()): number {
 	const broker = 1 + upgradeLevel(state, "broker") * 0.12;
 	const goods = 1 + upgradeLevel(state, "goods") * 0.35;
 	// 4주차는 결산 주간이다. 더 살 설비가 없으니 배당으로 굴리라는 신호.
-	const finalWeek = seasonWeek(now) >= 3 ? BALANCE.finalWeekDividend : 1;
+	const finalWeek = seasonWeekOf(state.seasonStartedAt, now) >= 3 ? BALANCE.finalWeekDividend : 1;
 	return broker * goods * finalWeek;
 }
 

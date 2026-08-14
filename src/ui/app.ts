@@ -1,5 +1,5 @@
 import { coin, fmt, rate } from "../core/format";
-import { remainingLabel, seasonRemaining } from "../core/season";
+import { remainingLabel, remainingOf } from "../core/season";
 import type { GameState } from "../core/types";
 import { buyUpgrade, seat, uploadCharacter } from "../game/actions";
 import { consign, placePlayerBid } from "../game/auction";
@@ -90,7 +90,7 @@ function render(refs: Refs, state: GameState): void {
 		html`
 			<div class="brand">
 				<span class="brand__mark">✦</span> 버츄얼 팬덤 타이쿤
-				<span class="brand__season">${seasonLabelShort(state)} · ${remainingLabel(seasonRemaining())} 남음</span>
+				<span class="brand__season">${seasonLabelShort(state)} · ${remainingLabel(remainingOf(state.seasonEndsAt))} 남음</span>
 			</div>
 			<div class="wallet">
 				<div class="wallet__coin">${coin(state.coins)}</div>
@@ -180,6 +180,7 @@ async function onChange(event: Event): Promise<void> {
 }
 
 function seasonLabelShort(state: GameState): string {
+	if (state.seasonId.startsWith("local-")) return `시즌 ${state.meta.seasonsPlayed + 1}`;
 	const month = Number(state.seasonId.split("-")[1] ?? 0);
 	return month ? `${month}월 시즌` : "시즌";
 }
