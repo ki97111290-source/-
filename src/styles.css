@@ -891,6 +891,44 @@ button:focus-visible {
 
 /* ---------- 상점 ---------- */
 
+.weekbar {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 10px;
+	flex-wrap: wrap;
+	padding: 9px 12px;
+	border-radius: 10px;
+	background: linear-gradient(90deg, rgba(124, 92, 255, 0.18), rgba(255, 92, 157, 0.1));
+	border: 1px solid var(--line);
+}
+.weekbar b {
+	font-size: 14px;
+}
+
+.tierblock {
+	display: grid;
+	gap: 8px;
+	padding: 10px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	background: rgba(255, 255, 255, 0.02);
+}
+.tierblock--locked {
+	opacity: 0.72;
+	border-style: dashed;
+}
+.tierblock__head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+.tierblock__head h2 {
+	font-size: 14px;
+}
+
 .upgs {
 	display: grid;
 	gap: 8px;

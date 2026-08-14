@@ -5,8 +5,8 @@ import { emptyMeta } from "./season";
 import { SAVE_VERSION, createNewGame, syncSlots } from "./state";
 import { rollTrait } from "./traits";
 
-/** 더 이상 존재하지 않는 과제 id (콤보 시스템 제거) */
-const RETIRED_ACHIEVEMENTS = new Set(["combo-30", "combo-50"]);
+/** 더 이상 존재하지 않는 과제 id (콤보 제거 · 주차 커브 도입) */
+const RETIRED_ACHIEVEMENTS = new Set(["combo-30", "combo-50", "income-100", "income-2000"]);
 
 /**
  * 시즌 이전 세이브에는 meta가 없다. 그동안 업로드해 둔 캐릭터를 잃지 않도록

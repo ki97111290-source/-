@@ -1,5 +1,5 @@
 import type { GameState } from "../core/types";
-import { incomePerSecond } from "./economy";
+import { UPGRADES, type UpgradeTier } from "./balance";
 import { pushLog } from "./state";
 import { isRare, traitOf } from "./traits";
 
@@ -32,6 +32,23 @@ function topPopularity(state: GameState): number {
 
 function filledSeats(state: GameState): number {
 	return state.slots.filter(Boolean).length;
+}
+
+function tierLevels(state: GameState, tier: UpgradeTier) {
+	const defs = UPGRADES.filter((u) => u.tier === tier);
+	const have = defs.reduce((sum, d) => sum + Math.min(state.upgrades[d.id] ?? 0, d.maxLevel), 0);
+	const need = defs.reduce((sum, d) => sum + d.maxLevel, 0);
+	return { have, need };
+}
+
+function tierDone(state: GameState, tier: UpgradeTier): boolean {
+	const { have, need } = tierLevels(state, tier);
+	return have >= need;
+}
+
+function tierProgress(state: GameState, tier: UpgradeTier): number {
+	const { have, need } = tierLevels(state, tier);
+	return ratio(have, need);
 }
 
 function heldStocks(state: GameState): number {
@@ -70,24 +87,34 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		progress: (s) => ratio(filledSeats(s), 3),
 	},
 	{
-		id: "income-100",
-		name: "24시간 편성",
-		desc: "초당 수입 100 C",
-		icon: "⚡",
-		fame: 4,
-		coins: 30_000,
-		done: (s) => incomePerSecond(s) >= 100,
-		progress: (s) => ratio(incomePerSecond(s), 100),
+		id: "tier-0",
+		name: "인프라 완성",
+		desc: "1주차 설비 전부 MAX",
+		icon: "🏗",
+		fame: 3,
+		coins: 20_000,
+		done: (s) => tierDone(s, 0),
+		progress: (s) => tierProgress(s, 0),
 	},
 	{
-		id: "income-2000",
-		name: "잠든 사이에도",
-		desc: "초당 수입 2,000 C",
-		icon: "🌌",
-		fame: 7,
-		coins: 300_000,
-		done: (s) => incomePerSecond(s) >= 2000,
-		progress: (s) => ratio(incomePerSecond(s), 2000),
+		id: "tier-1",
+		name: "핵심 설비 완성",
+		desc: "2주차 설비 전부 MAX",
+		icon: "⚙️",
+		fame: 6,
+		coins: 5_000_000,
+		done: (s) => tierDone(s, 1),
+		progress: (s) => tierProgress(s, 1),
+	},
+	{
+		id: "tier-2",
+		name: "최종 설비 완성",
+		desc: "3주차 설비 전부 MAX",
+		icon: "🏛",
+		fame: 10,
+		coins: 500_000_000,
+		done: (s) => tierDone(s, 2),
+		progress: (s) => tierProgress(s, 2),
 	},
 	{
 		id: "upload-1",

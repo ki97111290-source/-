@@ -45,6 +45,24 @@ export function seasonProgress(now = Date.now()): number {
 	return Math.max(0, Math.min(1, (now - start) / (end - start)));
 }
 
+export const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** 시즌 시작 기준 몇 주차인가 (0=1주차, 1=2주차, ...). 마지막 주는 3에서 멈춘다. */
+export function seasonWeek(now = Date.now()): number {
+	const start = seasonStartMs(seasonIdOf(now));
+	return Math.max(0, Math.min(3, Math.floor((now - start) / WEEK_MS)));
+}
+
+/** 그 주차가 열리는 순간(ms epoch) */
+export function weekStartMs(week: number, now = Date.now()): number {
+	return seasonStartMs(seasonIdOf(now)) + week * WEEK_MS;
+}
+
+/** 해당 주차 해금까지 남은 시간(ms). 이미 열렸으면 0 */
+export function weekUnlockIn(week: number, now = Date.now()): number {
+	return Math.max(0, weekStartMs(week, now) - now);
+}
+
 export function seasonLabel(seasonId: string): string {
 	const [year, month] = seasonId.split("-");
 	return `${year}년 ${Number(month)}월 시즌`;

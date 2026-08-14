@@ -1,5 +1,6 @@
+import { seasonWeek } from "../core/season";
 import type { GameState, UpgradeId } from "../core/types";
-import { UPGRADES, upgradeCost } from "./balance";
+import { TIER_NAMES, UPGRADES, upgradeCost } from "./balance";
 import { BALANCE } from "./balance";
 import { createCharacter } from "./characters";
 import { pushLog, syncSlots, upgradeLevel } from "./state";
@@ -47,9 +48,12 @@ export function uploadCharacter(
 	return { ok: true, message: `${character.name}을(를) 등록했어요.` };
 }
 
-export function buyUpgrade(state: GameState, id: UpgradeId): ActionResult {
+export function buyUpgrade(state: GameState, id: UpgradeId, now = Date.now()): ActionResult {
 	const def = UPGRADES.find((u) => u.id === id);
 	if (!def) return { ok: false, message: "없는 업그레이드예요." };
+	if (seasonWeek(now) < def.tier) {
+		return { ok: false, message: `${TIER_NAMES[def.tier]}에 열립니다.` };
+	}
 	const level = upgradeLevel(state, id);
 	if (level >= def.maxLevel) return { ok: false, message: "이미 최대 레벨이에요." };
 

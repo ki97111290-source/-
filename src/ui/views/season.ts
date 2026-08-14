@@ -1,5 +1,12 @@
 import { fmt } from "../../core/format";
-import { remainingLabel, seasonLabel, seasonProgress, seasonRemaining } from "../../core/season";
+import {
+	remainingLabel,
+	seasonLabel,
+	seasonProgress,
+	seasonRemaining,
+	seasonWeek,
+	weekUnlockIn,
+} from "../../core/season";
 import type { GameState } from "../../core/types";
 import { TROPHY_TIERS, honorMultiplier, nextTrophy, tierOf, trophyFor } from "../../game/season";
 import { html, raw } from "../dom";
@@ -26,6 +33,8 @@ export function renderSeason(state: GameState): string {
 			</header>
 			<div class="timer"><div class="timer__bar" style="width:${((1 - seasonProgress(now)) * 100).toFixed(1)}%"></div></div>
 
+			${raw(weekLine())}
+
 			<div class="statrow">
 				<div class="stat"><span>시즌 응원</span><b>${fmt(cheers)}회</b></div>
 				<div class="stat"><span>명예 보너스</span><b>×${honorMultiplier(meta).toFixed(2)}</b></div>
@@ -47,6 +56,27 @@ export function renderSeason(state: GameState): string {
 				명예 보너스는 다음 시즌 수입에 그대로 붙습니다.
 			</p>
 		</section>
+	`;
+}
+
+/** 이번 주차에 무엇이 열려 있고 다음이 언제인지 */
+function weekLine(): string {
+	const week = seasonWeek();
+	const plan = [
+		"1주차 · 인프라를 까는 주간",
+		"2주차 · 핵심 설비 해금",
+		"3주차 · 최종 설비 해금",
+		"4주차 · 결산 주간 (배당 ×1.5)",
+	];
+	const next =
+		week < 3
+			? html`<span class="muted small">${remainingLabel(weekUnlockIn(week + 1))} 후 ${plan[week + 1]}</span>`
+			: '<span class="muted small">더 살 설비가 없습니다. 주식과 경매로 불리세요.</span>';
+	return html`
+		<div class="weekbar">
+			<b>${plan[week]}</b>
+			${raw(next)}
+		</div>
 	`;
 }
 

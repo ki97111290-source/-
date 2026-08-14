@@ -13,23 +13,23 @@ export interface TrophyTier {
 }
 
 /**
- * 기준값은 한 달치 시뮬레이션으로 잡았다. (여유가 생기면 업그레이드를 사는
- * 보통 플레이 기준, 계속 켜뒀을 때 1시간 11만 · 1일 380만 · 7일 3천만 · 30일 1.4억)
- * 괄호 안은 계속 켜뒀을 때 걸리는 시간이다.
+ * 기준값은 한 달치 시뮬레이션으로 잡았다. 주차 커브(1주 인프라 → 2주 핵심 →
+ * 3주 최종 → 4주 주식·경매)를 그대로 따라간 항상 켜둔 플레이어 기준이며,
+ * 괄호 안이 그 지점에 닿는 날짜다. 마스터는 한 달을 거의 꽉 채워야 한다.
  */
 export const TROPHY_TIERS: readonly TrophyTier[] = [
-	// 약 1시간
+	// D2
 	{ id: "bronze", name: "브론즈", icon: "🥉", need: 100_000, points: 1, color: "#cd7f32" },
-	// 약 8시간
+	// D9 — 핵심 설비를 올리기 시작할 무렵
 	{ id: "silver", name: "실버", icon: "🥈", need: 1_000_000, points: 3, color: "#c0c8d8" },
-	// 약 1.5일
+	// D13 — 핵심 설비 완성 직전
 	{ id: "gold", name: "골드", icon: "🥇", need: 5_000_000, points: 7, color: "#ffd66b" },
-	// 약 5일
-	{ id: "platinum", name: "플래티넘", icon: "💠", need: 20_000_000, points: 14, color: "#67e8f9" },
-	// 약 11일
-	{ id: "diamond", name: "다이아", icon: "💎", need: 50_000_000, points: 25, color: "#a78bfa" },
-	// 한 달을 거의 꽉 채워야 닿는다
-	{ id: "master", name: "마스터", icon: "👑", need: 120_000_000, points: 45, color: "#ff5c9d" },
+	// D17 — 최종 설비 중반
+	{ id: "platinum", name: "플래티넘", icon: "💠", need: 13_000_000, points: 14, color: "#67e8f9" },
+	// D23 — 결산 주간
+	{ id: "diamond", name: "다이아", icon: "💎", need: 24_000_000, points: 25, color: "#a78bfa" },
+	// D30 — 시즌을 끝까지 완주해야 닿는다
+	{ id: "master", name: "마스터", icon: "👑", need: 36_000_000, points: 45, color: "#ff5c9d" },
 ] as const;
 
 /** 시즌 응원 수로 받을 등급. 기준 미달이면 null(무관). */

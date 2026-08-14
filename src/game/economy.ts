@@ -18,9 +18,27 @@ export function fameMultiplier(state: GameState): number {
 	return 1 + state.fame * BALANCE.famePerPoint;
 }
 
-/** 명성(시즌) × 명예(트로피, 영구)를 합친 전체 수입 배수 */
+/** 팬덤 본부(3주차 설비)가 주는 전체 수입 배수 */
+export function hqMultiplier(state: GameState): number {
+	return 1 + upgradeLevel(state, "hq") * 0.6;
+}
+
+/** 명성(시즌) × 명예(트로피, 영구) × 팬덤 본부를 합친 전체 수입 배수 */
 export function bonusMultiplier(state: GameState): number {
-	return fameMultiplier(state) * honorMultiplier(state.meta);
+	return fameMultiplier(state) * honorMultiplier(state.meta) * hqMultiplier(state);
+}
+
+/** 홍보 대행사가 주는 인기도 상승 배수 */
+export function promoMultiplier(state: GameState): number {
+	return 1 + upgradeLevel(state, "promo") * 0.3;
+}
+
+/**
+ * 인기도 소프트캡. 글로벌 송출을 올리면 한계가 뒤로 밀린다.
+ * (나눠주는 계수가 작아질수록 인기도가 더 높이 올라간다)
+ */
+export function popularitySoftcap(state: GameState): number {
+	return BALANCE.popularitySoftcap / (1 + upgradeLevel(state, "global") * 0.35);
 }
 
 export function occupiedSlots(state: GameState): string[] {
@@ -38,7 +56,7 @@ export function passiveIncome(state: GameState): number {
 }
 
 export function cheerMultiplier(state: GameState): number {
-	return 1 + upgradeLevel(state, "cheerPower") * 0.35;
+	return 1 + upgradeLevel(state, "cheerPower") * 0.5;
 }
 
 /** 룸 전체의 초당 응원 횟수. 업그레이드 없이도 기본값만큼 돌아간다. */
@@ -82,10 +100,13 @@ export function popularityPerSecond(state: GameState): number {
 }
 
 function popularityGain(state: GameState, character: Character, power: number): number {
-	return (
-		(BALANCE.cheerPopularity * cheerMultiplier(state) * power * traitOf(character).popGain) /
-		(1 + character.popularity * 0.02)
-	);
+	const raw =
+		BALANCE.cheerPopularity *
+		cheerMultiplier(state) *
+		promoMultiplier(state) *
+		power *
+		traitOf(character).popGain;
+	return raw / (1 + character.popularity * popularitySoftcap(state));
 }
 
 export function offlineEfficiency(state: GameState): number {

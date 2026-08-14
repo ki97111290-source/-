@@ -35,7 +35,16 @@ export interface Character {
 	createdAt: number;
 }
 
-export type UpgradeId = "cheerPower" | "autoCheer" | "slot" | "fanCafe" | "broker";
+export type UpgradeId =
+	| "cheerPower"
+	| "autoCheer"
+	| "slot"
+	| "fanCafe"
+	| "broker"
+	| "promo"
+	| "hq"
+	| "global"
+	| "goods";
 
 export interface Holding {
 	shares: number;
