@@ -26,9 +26,11 @@ export function createNewGame(
 		seasonId: bounds.id,
 		seasonStartedAt: bounds.startMs,
 		seasonEndsAt: bounds.endMs,
+		seasonFans: 0,
 		seasonCheers: 0,
 		meta,
-		coins: 0,
+		// 시즌 시작 시드머니. 첫 설비를 바로 살 수 있어 초반이 답답하지 않다.
+		money: BALANCE.seedMoney,
 		totalEarned: 0,
 		totalCheers: 0,
 		characters: {},
@@ -92,7 +94,11 @@ export function createNewGame(
 	}
 	state.slots[0] = state.owned[0] ?? null;
 
-	pushLog(state, "응원 룸이 열렸습니다. 켜두기만 하면 응원이 알아서 돌아가요.", "good");
+	pushLog(
+		state,
+		`시드머니 ${BALANCE.seedMoney.toLocaleString("ko-KR")}원으로 시작합니다. 켜두기만 하면 응원이 알아서 돌아가요.`,
+		"good",
+	);
 	if (meta.roster.length > 0) {
 		pushLog(state, `보관함의 캐릭터 ${meta.roster.length}명이 다시 데뷔했습니다.`, "info");
 	} else {
@@ -122,7 +128,7 @@ export function syncSlots(state: GameState): void {
 }
 
 export function netWorth(state: GameState): number {
-	let total = state.coins;
+	let total = state.money;
 	for (const [id, holding] of Object.entries(state.portfolio)) {
 		const character = state.characters[id];
 		if (character) total += holding.shares * character.price;

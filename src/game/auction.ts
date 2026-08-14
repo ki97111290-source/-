@@ -2,7 +2,7 @@ import { type Rng, pick, range } from "../core/rng";
 import type { AuctionState, GameState } from "../core/types";
 import { BALANCE, OWNER_ME } from "./balance";
 import { RIVAL_NAMES, appraise, createCharacter, pruneCharacters } from "./characters";
-import { addCoins } from "./economy";
+import { addMoney } from "./economy";
 import { pushLog, syncSlots } from "./state";
 
 const NO_BID = "유찰 대기";
@@ -52,7 +52,7 @@ export function startAuction(state: GameState, rng: Rng): void {
 	state.auction = makeAuction(state, target.id, false, rng);
 	pushLog(
 		state,
-		`경매 시작: ${target.name} (시작가 ${fmtInt(state.auction.startPrice)} C)`,
+		`경매 시작: ${target.name} (시작가 ${fmtInt(state.auction.startPrice)}원)`,
 		"market",
 	);
 }
@@ -110,10 +110,10 @@ export function placePlayerBid(state: GameState, amount: number): string | null 
 
 	const bid = Math.floor(amount);
 	const min = minimumBid(auction);
-	if (bid < min) return `최소 ${fmtInt(min)} C 이상 불러야 해요.`;
-	if (state.coins < bid) return "코인이 부족해요.";
+	if (bid < min) return `최소 ${fmtInt(min)}원 이상 불러야 해요.`;
+	if (state.money < bid) return "돈이 부족해요.";
 
-	state.coins -= bid;
+	state.money -= bid;
 	auction.escrow = bid;
 	auction.currentBid = bid;
 	auction.leader = OWNER_ME;
@@ -147,7 +147,7 @@ export function tickAuction(state: GameState, dt: number, rng: Rng): void {
 
 		// 내가 최고가였다면 묶였던 코인을 돌려준다.
 		if (auction.leader === OWNER_ME && auction.escrow > 0) {
-			state.coins += auction.escrow;
+			state.money += auction.escrow;
 			auction.escrow = 0;
 			pushLog(state, `${rival.name}에게 밀렸습니다. 입찰금을 돌려받았어요.`, "bad");
 		}
@@ -171,9 +171,9 @@ function settle(state: GameState): void {
 	if (auction.consignedByPlayer) {
 		if (hadBid) {
 			const net = auction.currentBid * (1 - CONSIGN_FEE);
-			addCoins(state, net);
+			addMoney(state, net);
 			if (character) character.holder = auction.leader;
-			pushLog(state, `${name} 낙찰! ${fmtInt(net)} C를 정산받았습니다.`, "good");
+			pushLog(state, `${name} 낙찰! ${fmtInt(net)}원을 정산받았습니다.`, "good");
 		} else {
 			// 유찰: 캐릭터를 그대로 돌려받는다.
 			state.owned.push(auction.characterId);
@@ -187,7 +187,7 @@ function settle(state: GameState): void {
 		state.auctionWins += 1;
 		pushLog(
 			state,
-			`축하합니다! ${name}을(를) ${fmtInt(auction.currentBid)} C에 낙찰받았습니다.`,
+			`축하합니다! ${name}을(를) ${fmtInt(auction.currentBid)}원에 낙찰받았습니다.`,
 			"good",
 		);
 		autoSeat(state, auction.characterId);

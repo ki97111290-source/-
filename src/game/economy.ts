@@ -109,12 +109,29 @@ function popularityGain(state: GameState, character: Character, power: number): 
 	return raw / (1 + character.popularity * popularitySoftcap(state));
 }
 
+/** 응원 1회가 쌓는 팬심. 인기도가 높은 캐릭터를 응원할수록 크다. */
+export function fanValue(character: Character): number {
+	return 1 + character.popularity * BALANCE.fanFromPopularity;
+}
+
+/** 룸 전체가 초당 쌓는 팬심 (표시용) */
+export function fansPerSecond(state: GameState): number {
+	const perSlot = cheersPerSlot(state);
+	if (perSlot <= 0) return 0;
+	let total = 0;
+	for (const id of occupiedSlots(state)) {
+		const character = state.characters[id];
+		if (character) total += perSlot * fanValue(character);
+	}
+	return total;
+}
+
 export function offlineEfficiency(state: GameState): number {
 	return Math.min(1, BALANCE.offlineBase + upgradeLevel(state, "fanCafe") * 0.05);
 }
 
-export function addCoins(state: GameState, amount: number): void {
-	state.coins += amount;
+export function addMoney(state: GameState, amount: number): void {
+	state.money += amount;
 	if (amount > 0) state.totalEarned += amount;
 }
 
@@ -130,14 +147,16 @@ export function cheer(state: GameState, characterId: string, power = 1): void {
 	character.popularity += popularityGain(state, character, power);
 	character.hype += 0.12 * mult;
 
-	addCoins(state, slotIncome(character) * BALANCE.cheerBurst * mult * bonusMultiplier(state));
+	addMoney(state, slotIncome(character) * BALANCE.cheerBurst * mult * bonusMultiplier(state));
 	state.totalCheers += power;
 	state.seasonCheers += power;
+	// 팬심은 시즌 점수다. 돈과 달리 쓰이지 않고 쌓이기만 한다.
+	state.seasonFans += power * fanValue(character);
 }
 
 /** 매 시뮬레이션 스텝마다 도는 기본 경제 로직 */
 export function tickEconomy(state: GameState, dt: number): void {
-	addCoins(state, passiveIncome(state) * dt);
+	addMoney(state, passiveIncome(state) * dt);
 
 	// 응원은 켜두기만 하면 알아서 돌아간다. 응원석에 앉은 캐릭터에게 골고루 들어간다.
 	const perSlot = cheersPerSlot(state) * dt;
@@ -156,7 +175,8 @@ export function tickEconomy(state: GameState, dt: number): void {
 
 export interface OfflineReport {
 	seconds: number;
-	coins: number;
+	/** 그동안 벌어들인 원 */
+	money: number;
 	capped: boolean;
 }
 
@@ -169,14 +189,16 @@ export function applyOffline(state: GameState, now = Date.now()): OfflineReport 
 	}
 	const capped = elapsed > BALANCE.offlineCap;
 	const seconds = Math.min(elapsed, BALANCE.offlineCap);
-	const coins = incomePerSecond(state) * seconds * offlineEfficiency(state);
+	const money = incomePerSecond(state) * seconds * offlineEfficiency(state);
 
-	addCoins(state, coins);
+	addMoney(state, money);
 	// 닫아둔 동안에도 응원 횟수는 같은 효율로 쌓인다. 트로피 진행이 완전히 멈추면
 	// "켜두면 되는 게임"이 "24시간 켜둬야 하는 게임"이 되어버린다.
-	const offlineCheers = cheersPerSecond(state) * seconds * offlineEfficiency(state);
+	const efficiency = offlineEfficiency(state);
+	const offlineCheers = cheersPerSecond(state) * seconds * efficiency;
 	state.totalCheers += offlineCheers;
 	state.seasonCheers += offlineCheers;
+	state.seasonFans += fansPerSecond(state) * seconds * efficiency;
 
 	// 다만 인기도는 오르지 않는다. 오랫동안 응원이 끊기면 오히려 식는다.
 	for (const character of Object.values(state.characters)) {
@@ -185,5 +207,5 @@ export function applyOffline(state: GameState, now = Date.now()): OfflineReport 
 		character.hype *= 1 - Math.min(0.95, BALANCE.hypeDecay * seconds);
 	}
 	state.lastTick = now;
-	return { seconds, coins, capped };
+	return { seconds, money, capped };
 }

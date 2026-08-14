@@ -1,4 +1,4 @@
-import { coin, duration } from "./core/format";
+import { duration, won } from "./core/format";
 import { seasonLabel } from "./core/season";
 import { applyOffline } from "./game/economy";
 import { Engine } from "./game/engine";
@@ -21,10 +21,10 @@ const { state, fresh } = loadGame();
 if (!fresh) {
 	// 오프라인 수입을 먼저 정산해야 그 응원까지 지난 시즌 성적에 들어간다.
 	const report = applyOffline(state);
-	if (report && report.coins >= 1) {
+	if (report && report.money >= 1) {
 		pushLog(
 			state,
-			`자리를 비운 ${duration(report.seconds)} 동안 ${coin(report.coins)}가 쌓였어요.${
+			`자리를 비운 ${duration(report.seconds)} 동안 ${won(report.money)}이 쌓였어요.${
 				report.capped ? " (최대 8시간까지 인정)" : ""
 			}`,
 			"good",

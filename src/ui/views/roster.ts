@@ -1,4 +1,4 @@
-import { coin, fmt } from "../../core/format";
+import { fmt, won } from "../../core/format";
 import type { GameState } from "../../core/types";
 import { BALANCE } from "../../game/balance";
 import { appraise, ownedCharacters } from "../../game/characters";
@@ -24,9 +24,9 @@ export function renderRoster(state: GameState): string {
 					<p class="muted small">${trait.desc}</p>
 					<div class="kv">
 						<span>인기도 <b>${fmt(c.popularity)}</b></span>
-						<span>주가 <b>${coin(c.price)}</b></span>
-						<span>감정가 <b>${coin(appraise(c))}</b></span>
-						<span>수입 <b>${coin(slotIncome(c))}/초</b></span>
+						<span>주가 <b>${won(c.price)}</b></span>
+						<span>감정가 <b>${won(appraise(c))}</b></span>
+						<span>수입 <b>${won(slotIncome(c))}/초</b></span>
 					</div>
 				</div>
 				<div class="card__actions">

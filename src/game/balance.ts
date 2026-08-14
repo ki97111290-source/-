@@ -9,6 +9,10 @@ export const BALANCE = {
 	baseIncome: 1.2,
 	/** 인기도가 수입에 반영되는 정도: 1 + pop * incomeFromPopularity */
 	incomeFromPopularity: 0.008,
+	/** 시즌 시작 시 지급하는 시드머니(원) */
+	seedMoney: 1_000_000,
+	/** 팬심은 응원 1회당 (1 + 인기도 × 이 값)만큼 쌓인다 */
+	fanFromPopularity: 0.02,
 	/** 응원 1회가 올려주는 인기도 */
 	cheerPopularity: 0.9,
 	/** 인기도 소프트캡. 클수록 인기도가 빨리 정체된다. */

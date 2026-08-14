@@ -5,8 +5,8 @@ import {
 	cheerMultiplier,
 	cheersPerSecond,
 	fameMultiplier,
+	fansPerSecond,
 	incomePerSecond,
-	popularityPerSecond,
 	slotIncome,
 } from "../../game/economy";
 import { slotCount } from "../../game/state";
@@ -34,12 +34,12 @@ export function renderRoom(state: GameState): string {
 				<div class="stat"><span>초당 수입</span><b>${rate(incomePerSecond(state))}</b></div>
 				<div class="stat"><span>응원 속도</span><b>${cheersPerSecond(state).toFixed(1)}회/초</b></div>
 				<div class="stat"><span>응원 위력</span><b>×${cheerMultiplier(state).toFixed(2)}</b></div>
-				<div class="stat"><span>인기도 상승</span><b>+${fmt(popularityPerSecond(state))}/초</b></div>
+				<div class="stat"><span>팬심 상승</span><b>💜 +${fmt(fansPerSecond(state))}/초</b></div>
 			</div>
 			<p class="hint">
-				이 페이지를 켜두기만 하면 응원이 알아서 돌아갑니다.
-				누굴 앉힐지, 번 돈을 <b>주식</b>과 <b>경매</b> 중 어디에 쓸지만 정하면 돼요.
-				명성 보너스 ×${fameMultiplier(state).toFixed(2)} 적용 중.
+				응원은 <b>💜 팬심</b>(시즌 성적)과 <b>원</b>(지갑)을 따로 만듭니다.
+				팬심은 인기도가 높은 캐릭터를 응원할수록 많이 쌓이고 트로피 등급을 정합니다.
+				돈은 쓰지만 팬심은 쌓이기만 해요. 명성 보너스 ×${fameMultiplier(state).toFixed(2)} 적용 중.
 			</p>
 			<div class="slots">${raw(slots)}${raw(lockedCard)}</div>
 		</section>

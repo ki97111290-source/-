@@ -15,10 +15,17 @@ const RETIRED_ACHIEVEMENTS = new Set(["combo-30", "combo-50", "income-100", "inc
 function normalizeMeta(raw: MetaState | undefined, state: GameState): MetaState {
 	const meta = emptyMeta();
 	if (raw && typeof raw === "object") {
-		meta.trophies = Array.isArray(raw.trophies) ? raw.trophies : [];
+		meta.trophies = (Array.isArray(raw.trophies) ? raw.trophies : []).map((t) => ({
+			...t,
+			// 팬심 도입 이전 트로피는 응원 수가 기록돼 있다
+			fans: Number.isFinite(t.fans) ? t.fans : ((t as { cheers?: number }).cheers ?? 0),
+		}));
 		meta.roster = Array.isArray(raw.roster) ? raw.roster : [];
 		meta.seasonsPlayed = Number.isFinite(raw.seasonsPlayed) ? raw.seasonsPlayed : 0;
-		meta.bestCheers = Number.isFinite(raw.bestCheers) ? raw.bestCheers : 0;
+		meta.bestFans = Number.isFinite(raw.bestFans)
+			? raw.bestFans
+			: // 팬심 도입 이전 세이브는 응원 수를 그대로 옮겨 담는다
+				((raw as { bestCheers?: number }).bestCheers ?? 0);
 		return meta;
 	}
 	for (const character of Object.values(state.characters ?? {})) {
@@ -140,6 +147,12 @@ function migrate(raw: Partial<GameState>): GameState | null {
 	}
 
 	state.meta = normalizeMeta(raw.meta, state);
+	// 원 도입 이전 세이브는 coins에 잔액이 들어 있다
+	const legacyMoney = (raw as { coins?: number }).coins;
+	if (!Number.isFinite(raw.money) && Number.isFinite(legacyMoney)) {
+		state.money = legacyMoney as number;
+	}
+	state.seasonFans = Number.isFinite(raw.seasonFans) ? (raw.seasonFans as number) : 0;
 	state.seasonCheers = Number.isFinite(raw.seasonCheers)
 		? (raw.seasonCheers as number)
 		: (state.totalCheers ?? 0);
@@ -153,7 +166,7 @@ function migrate(raw: Partial<GameState>): GameState | null {
 	for (const key of ["combo", "bestCombo"]) {
 		delete (state as unknown as Record<string, unknown>)[key];
 	}
-	state.coins = Number.isFinite(state.coins) ? state.coins : 0;
+	state.money = Number.isFinite(state.money) ? state.money : 0;
 	state.lastTick = Number.isFinite(state.lastTick) ? state.lastTick : Date.now();
 	syncSlots(state);
 	return state;

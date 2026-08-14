@@ -3,7 +3,7 @@ import { seasonWeekOf } from "../core/season";
 import type { Character, GameState } from "../core/types";
 import { BALANCE } from "./balance";
 import { fairPrice } from "./characters";
-import { addCoins } from "./economy";
+import { addMoney } from "./economy";
 import { pushLog, upgradeLevel } from "./state";
 import { traitOf } from "./traits";
 
@@ -132,10 +132,10 @@ function tickDividend(state: GameState, dt: number): void {
 	}
 	total *= dividendMultiplier(state);
 	if (total > 0) {
-		addCoins(state, total);
+		addMoney(state, total);
 		pushLog(
 			state,
-			`배당금 ${Math.floor(total).toLocaleString("ko-KR")} C가 입금됐습니다.`,
+			`배당금 ${Math.floor(total).toLocaleString("ko-KR")}원이 입금됐습니다.`,
 			"market",
 		);
 	}
@@ -156,9 +156,9 @@ export function buyShares(state: GameState, id: string, qty: number): TradeResul
 	if (available <= 0) return { ok: false, message: "시장에 남은 주식이 없어요." };
 	const buying = Math.min(amount, available);
 	const cost = buying * character.price * (1 + tradeFee(state));
-	if (state.coins < cost) return { ok: false, message: "코인이 부족해요." };
+	if (state.money < cost) return { ok: false, message: "돈이 부족해요." };
 
-	state.coins -= cost;
+	state.money -= cost;
 	const holding = state.portfolio[id] ?? { shares: 0, avgCost: 0 };
 	holding.avgCost =
 		(holding.avgCost * holding.shares + character.price * buying) / (holding.shares + buying);
@@ -178,7 +178,7 @@ export function sellShares(state: GameState, id: string, qty: number): TradeResu
 	if (selling <= 0) return { ok: false, message: "팔 주식이 없어요." };
 
 	const proceeds = selling * character.price * (1 - tradeFee(state));
-	addCoins(state, proceeds);
+	addMoney(state, proceeds);
 	holding.shares -= selling;
 	if (holding.shares <= 0) delete state.portfolio[id];
 

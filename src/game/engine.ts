@@ -5,7 +5,7 @@ import { checkAchievements } from "./achievements";
 import { tickAuction } from "./auction";
 import { BALANCE } from "./balance";
 import {
-	addCoins,
+	addMoney,
 	cheer,
 	cheersPerSlot,
 	incomePerSecond,
@@ -65,7 +65,7 @@ export class Engine {
 			// 브라우저가 백그라운드 탭의 프레임을 늦춘 경우다. 페이지는 켜져 있으므로
 			// 감산 없이 100% 정산한다. (효율이 깎이는 건 페이지를 닫았을 때뿐)
 			const seconds = Math.min(dt, BALANCE.offlineCap);
-			addCoins(this.state, incomePerSecond(this.state) * seconds);
+			addMoney(this.state, incomePerSecond(this.state) * seconds);
 			this.growPopularity(seconds);
 			this.step(BALANCE.step);
 			this.persist(AUTOSAVE);
@@ -89,10 +89,10 @@ export class Engine {
 			const character = this.state.characters[id];
 			if (!character) continue;
 			// 코인은 위에서 이미 정산했으므로 인기도만 올린다.
-			const coins = this.state.coins;
+			const coins = this.state.money;
 			const earned = this.state.totalEarned;
 			cheer(this.state, id, perSlot);
-			this.state.coins = coins;
+			this.state.money = coins;
 			this.state.totalEarned = earned;
 		}
 	}
@@ -110,18 +110,18 @@ export class Engine {
 		const report = rolloverIfNeeded(this.state, createNewGame);
 		if (!report) return;
 
-		const cheers = Math.floor(report.cheers).toLocaleString("ko-KR");
+		const fans = Math.floor(report.fans).toLocaleString("ko-KR");
 		if (report.trophy) {
 			const tier = tierOf(report.trophy.tier);
 			pushLog(
 				this.state,
-				`${seasonLabel(report.endedSeason)} 종료 — ${tier.icon} ${tier.name} 트로피 획득! (시즌 응원 ${cheers}회)`,
+				`${seasonLabel(report.endedSeason)} 종료 — ${tier.icon} ${tier.name} 트로피 획득! (시즌 팬심 ${fans})`,
 				"good",
 			);
 		} else {
 			pushLog(
 				this.state,
-				`${seasonLabel(report.endedSeason)} 종료 — 시즌 응원 ${cheers}회, 트로피 기준에 닿지 못했어요.`,
+				`${seasonLabel(report.endedSeason)} 종료 — 시즌 팬심 ${fans}, 트로피 기준에 닿지 못했어요.`,
 				"info",
 			);
 		}

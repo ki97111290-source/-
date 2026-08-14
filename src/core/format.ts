@@ -22,9 +22,14 @@ export function fmt(n: number): string {
 	return sign + Math.floor(abs).toLocaleString("ko-KR");
 }
 
-/** 코인 표기 */
-export function coin(n: number): string {
-	return `${fmt(n)} C`;
+/** 금액 표기 */
+export function won(n: number): string {
+	return `${fmt(n)}원`;
+}
+
+/** 팬심 표기 */
+export function fans(n: number): string {
+	return `${fmt(n)} 팬심`;
 }
 
 /** 초당 수치 표기 */

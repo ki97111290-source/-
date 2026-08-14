@@ -58,9 +58,9 @@ export function buyUpgrade(state: GameState, id: UpgradeId, now = Date.now()): A
 	if (level >= def.maxLevel) return { ok: false, message: "이미 최대 레벨이에요." };
 
 	const cost = upgradeCost(def, level);
-	if (state.coins < cost) return { ok: false, message: "코인이 부족해요." };
+	if (state.money < cost) return { ok: false, message: "돈이 부족해요." };
 
-	state.coins -= cost;
+	state.money -= cost;
 	state.upgrades[id] = level + 1;
 	if (id === "slot") syncSlots(state);
 	return { ok: true, message: `${def.name} Lv.${level + 1}` };

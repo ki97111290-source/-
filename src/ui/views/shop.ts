@@ -1,4 +1,4 @@
-import { coin, duration, fmt } from "../../core/format";
+import { duration, fmt, won } from "../../core/format";
 import { remainingLabel, seasonWeekOf, weekUnlockInOf } from "../../core/season";
 import type { GameState } from "../../core/types";
 import { ACHIEVEMENTS } from "../../game/achievements";
@@ -35,8 +35,8 @@ export function renderShop(state: GameState): string {
 
 			<h2 class="section-title">기록</h2>
 			<div class="statrow">
-				<div class="stat"><span>총 자산</span><b>${coin(netWorth(state))}</b></div>
-				<div class="stat"><span>누적 수입</span><b>${coin(state.totalEarned)}</b></div>
+				<div class="stat"><span>총 자산</span><b>${won(netWorth(state))}</b></div>
+				<div class="stat"><span>누적 수입</span><b>${won(state.totalEarned)}</b></div>
 				<div class="stat"><span>누적 응원</span><b>${fmt(state.totalCheers)}회</b></div>
 				<div class="stat"><span>플레이 시간</span><b>${duration(played)}</b></div>
 			</div>
@@ -86,7 +86,7 @@ function tierBlock(state: GameState, tier: UpgradeTier, week: number): string {
 					const level = upgradeLevel(state, def.id);
 					const maxed = level >= def.maxLevel;
 					const cost = upgradeCost(def, level);
-					const can = !maxed && state.coins >= cost;
+					const can = !maxed && state.money >= cost;
 					return html`
 			<article class="upg ${maxed ? "upg--max" : ""}">
 				<div class="upg__icon">${def.icon}</div>
@@ -100,7 +100,7 @@ function tierBlock(state: GameState, tier: UpgradeTier, week: number): string {
 					data-action="upgrade"
 					data-id="${def.id}"
 					${raw(can ? "" : "disabled")}
-				>${maxed ? "MAX" : coin(cost)}</button>
+				>${maxed ? "MAX" : won(cost)}</button>
 			</article>`;
 				})
 				.join("");
@@ -139,7 +139,7 @@ function quests(state: GameState): string {
 				</div>
 				<div class="quest__reward">
 					<b>명성 +${q.fame}</b>
-					<span class="muted small">${coin(q.coins)}</span>
+					<span class="muted small">${won(q.money)}</span>
 				</div>
 			</article>`;
 		})

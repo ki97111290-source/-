@@ -1,4 +1,4 @@
-import { coin, fmt, rate } from "../core/format";
+import { fans, fmt, rate, won } from "../core/format";
 import { remainingLabel, remainingOf } from "../core/season";
 import type { GameState } from "../core/types";
 import { buyUpgrade, seat, uploadCharacter } from "../game/actions";
@@ -16,7 +16,6 @@ import {
 import type { Engine } from "../game/engine";
 import { buyShares, sellShares } from "../game/market";
 import { clearSave, exportSave, importSave, saveGame } from "../game/save";
-import { netWorth } from "../game/state";
 import { html, paint } from "./dom";
 import { effectiveTheme, toggleTheme } from "./theme";
 import { type PickItem, TABS, type TabId, closeModals, toast, ui } from "./uiState";
@@ -102,8 +101,10 @@ function render(refs: Refs, state: GameState): void {
 					aria-label="${effectiveTheme() === "dark" ? "밝은 화면으로 전환" : "어두운 화면으로 전환"}"
 				>${effectiveTheme() === "dark" ? "☀️" : "🌙"}</button>
 				<div class="wallet">
-					<div class="wallet__coin">${coin(state.coins)}</div>
-					<div class="wallet__sub">${rate(incomePerSecond(state))} · 자산 ${coin(netWorth(state))}</div>
+					<div class="wallet__coin">${won(state.money)}</div>
+					<div class="wallet__sub">
+						${rate(incomePerSecond(state))} · <span class="wallet__fans">💜 ${fans(state.seasonFans)}</span>
+					</div>
 				</div>
 			</div>
 		`,
@@ -386,7 +387,7 @@ function floatGain(x: number, y: number, amount: number): void {
 	if (amount <= 0) return;
 	const el = document.createElement("span");
 	el.className = "floatgain";
-	el.textContent = `+${coin(amount)}`;
+	el.textContent = `+${won(amount)}`;
 	el.style.left = `${x}px`;
 	el.style.top = `${y}px`;
 	document.body.appendChild(el);

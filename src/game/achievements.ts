@@ -10,8 +10,8 @@ export interface Achievement {
 	icon: string;
 	/** 달성 시 주는 명성(전체 수입 보너스) */
 	fame: number;
-	/** 달성 시 주는 코인 */
-	coins: number;
+	/** 달성 시 주는 상금(원) */
+	money: number;
 	done: (state: GameState) => boolean;
 	/** 진행도 0~1 (진행바 표시용) */
 	progress: (state: GameState) => number;
@@ -62,7 +62,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "응원 100회",
 		icon: "📣",
 		fame: 1,
-		coins: 500,
+		money: 500,
 		done: (s) => s.totalCheers >= 100,
 		progress: (s) => ratio(s.totalCheers, 100),
 	},
@@ -72,7 +72,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "응원 5,000회",
 		icon: "🎆",
 		fame: 3,
-		coins: 20_000,
+		money: 20_000,
 		done: (s) => s.totalCheers >= 5000,
 		progress: (s) => ratio(s.totalCheers, 5000),
 	},
@@ -82,7 +82,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "응원석 3자리를 채우기",
 		icon: "🪑",
 		fame: 2,
-		coins: 3_000,
+		money: 3_000,
 		done: (s) => filledSeats(s) >= 3,
 		progress: (s) => ratio(filledSeats(s), 3),
 	},
@@ -92,7 +92,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "1주차 설비 전부 MAX",
 		icon: "🏗",
 		fame: 3,
-		coins: 20_000,
+		money: 20_000,
 		done: (s) => tierDone(s, 0),
 		progress: (s) => tierProgress(s, 0),
 	},
@@ -102,7 +102,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "2주차 설비 전부 MAX",
 		icon: "⚙️",
 		fame: 6,
-		coins: 5_000_000,
+		money: 5_000_000,
 		done: (s) => tierDone(s, 1),
 		progress: (s) => tierProgress(s, 1),
 	},
@@ -112,7 +112,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "3주차 설비 전부 MAX",
 		icon: "🏛",
 		fame: 10,
-		coins: 500_000_000,
+		money: 500_000_000,
 		done: (s) => tierDone(s, 2),
 		progress: (s) => tierProgress(s, 2),
 	},
@@ -122,7 +122,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "캐릭터를 직접 등록",
 		icon: "🎀",
 		fame: 2,
-		coins: 2_000,
+		money: 2_000,
 		done: (s) => Object.values(s.characters).some((c) => c.origin === "user"),
 		progress: (s) => (Object.values(s.characters).some((c) => c.origin === "user") ? 1 : 0),
 	},
@@ -132,7 +132,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "캐릭터 3명 보유",
 		icon: "🏢",
 		fame: 2,
-		coins: 5_000,
+		money: 5_000,
 		done: (s) => s.owned.length >= 3,
 		progress: (s) => ratio(s.owned.length, 3),
 	},
@@ -142,7 +142,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "캐릭터 6명 보유",
 		icon: "🏙",
 		fame: 5,
-		coins: 60_000,
+		money: 60_000,
 		done: (s) => s.owned.length >= 6,
 		progress: (s) => ratio(s.owned.length, 6),
 	},
@@ -152,7 +152,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "경매에서 캐릭터 낙찰",
 		icon: "🔨",
 		fame: 2,
-		coins: 4_000,
+		money: 4_000,
 		done: (s) => s.auctionWins >= 1,
 		progress: (s) => ratio(s.auctionWins, 1),
 	},
@@ -162,7 +162,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "경매 5회 낙찰",
 		icon: "🏆",
 		fame: 4,
-		coins: 40_000,
+		money: 40_000,
 		done: (s) => s.auctionWins >= 5,
 		progress: (s) => ratio(s.auctionWins, 5),
 	},
@@ -172,7 +172,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "3개 종목 동시 보유",
 		icon: "📊",
 		fame: 3,
-		coins: 10_000,
+		money: 10_000,
 		done: (s) => heldStocks(s) >= 3,
 		progress: (s) => ratio(heldStocks(s), 3),
 	},
@@ -182,7 +182,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "내 캐릭터 인기도 100",
 		icon: "🔥",
 		fame: 4,
-		coins: 25_000,
+		money: 25_000,
 		done: (s) => topPopularity(s) >= 100,
 		progress: (s) => ratio(topPopularity(s), 100),
 	},
@@ -192,7 +192,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "내 캐릭터 인기도 300",
 		icon: "💫",
 		fame: 8,
-		coins: 200_000,
+		money: 200_000,
 		done: (s) => topPopularity(s) >= 300,
 		progress: (s) => ratio(topPopularity(s), 300),
 	},
@@ -202,7 +202,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 		desc: "희귀 성격(👑) 캐릭터 보유",
 		icon: "👑",
 		fame: 6,
-		coins: 80_000,
+		money: 80_000,
 		done: (s) =>
 			s.owned.some((id) => {
 				const c = s.characters[id];
@@ -218,11 +218,11 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 	},
 	{
 		id: "coins-1m",
-		name: "억대 팬덤",
-		desc: "누적 수입 100만 C",
+		name: "첫 100만원",
+		desc: "누적 수입 100만원",
 		icon: "💰",
 		fame: 5,
-		coins: 100_000,
+		money: 100_000,
 		done: (s) => s.totalEarned >= 1_000_000,
 		progress: (s) => ratio(s.totalEarned, 1_000_000),
 	},
@@ -236,8 +236,8 @@ export function checkAchievements(state: GameState): void {
 
 		state.achievements.push(achievement.id);
 		state.fame += achievement.fame;
-		state.coins += achievement.coins;
-		state.totalEarned += achievement.coins;
+		state.money += achievement.money;
+		state.totalEarned += achievement.money;
 		pushLog(
 			state,
 			`도전 과제 달성: ${achievement.icon} ${achievement.name} (명성 +${achievement.fame})`,

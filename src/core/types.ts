@@ -79,8 +79,8 @@ export type TrophyTierId = "bronze" | "silver" | "gold" | "platinum" | "diamond"
 export interface Trophy {
 	seasonId: string;
 	tier: TrophyTierId;
-	/** 그 시즌에 쌓은 응원 수 */
-	cheers: number;
+	/** 그 시즌에 쌓은 팬심 */
+	fans: number;
 	awardedAt: number;
 }
 
@@ -98,8 +98,8 @@ export interface MetaState {
 	/** 내가 업로드한 캐릭터 보관함. 매 시즌 다시 데뷔한다. */
 	roster: RosterEntry[];
 	seasonsPlayed: number;
-	/** 역대 최고 시즌 응원 수 */
-	bestCheers: number;
+	/** 역대 최고 시즌 팬심 */
+	bestFans: number;
 }
 
 export interface LogEntry {
@@ -120,12 +120,15 @@ export interface GameState {
 	seasonStartedAt: number;
 	/** 시즌이 끝나는 시각(ms). 이 시각을 넘기면 초기화된다. */
 	seasonEndsAt: number;
-	/** 이번 시즌에 쌓은 응원 수. 트로피 등급을 정한다. */
+	/** 이번 시즌에 쌓은 팬심. 트로피 등급을 정한다. 쓰이지 않고 쌓이기만 한다. */
+	seasonFans: number;
+	/** 이번 시즌 누적 응원 횟수 (기록용) */
 	seasonCheers: number;
 	/** 시즌을 넘어 유지되는 데이터 */
 	meta: MetaState;
 
-	coins: number;
+	/** 지갑(원). 시즌 시작 시 시드머니를 받는다. */
+	money: number;
 	totalEarned: number;
 	totalCheers: number;
 

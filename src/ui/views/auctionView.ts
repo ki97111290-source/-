@@ -1,4 +1,4 @@
-import { clock, coin, fmt } from "../../core/format";
+import { clock, fmt, won } from "../../core/format";
 import type { GameState } from "../../core/types";
 import { minimumBid } from "../../game/auction";
 import { BALANCE, OWNER_ME } from "../../game/balance";
@@ -32,7 +32,7 @@ export function renderAuction(state: GameState): string {
 		.slice(0, 8)
 		.map(
 			(b) => html`<li class="${b.bidder === OWNER_ME ? "bid bid--me" : "bid"}">
-				<span>${b.bidder}</span><b>${coin(b.amount)}</b>
+				<span>${b.bidder}</span><b>${won(b.amount)}</b>
 			</li>`,
 		)
 		.join("");
@@ -52,12 +52,12 @@ export function renderAuction(state: GameState): string {
 					<p class="muted small">${traitOf(character).desc}</p>
 					<div class="kv">
 						<span>인기도 <b>${fmt(character.popularity)}</b></span>
-						<span>감정가 <b>${coin(appraise(character))}</b></span>
-						<span>시작가 <b>${coin(auction.startPrice)}</b></span>
+						<span>감정가 <b>${won(appraise(character))}</b></span>
+						<span>시작가 <b>${won(auction.startPrice)}</b></span>
 					</div>
 					<div class="lot__bid">
 						<span class="muted">현재가</span>
-						<strong class="price">${coin(auction.currentBid)}</strong>
+						<strong class="price">${won(auction.currentBid)}</strong>
 						<span class="${leading ? "tag tag--live" : "tag"}">${auction.leader}</span>
 					</div>
 					<div class="timer"><div class="timer__bar" style="width:${(progress * 100).toFixed(1)}%"></div></div>
@@ -81,7 +81,7 @@ function bidBox(state: GameState, min: number, leading: boolean): string {
 	if (leading) {
 		return `<p class="notice notice--good">현재 내가 최고가입니다. 이대로 끝나면 낙찰!</p>`;
 	}
-	const affordable = state.coins >= min;
+	const affordable = state.money >= min;
 	return html`
 		<div class="bidbox">
 			<input
@@ -94,7 +94,7 @@ function bidBox(state: GameState, min: number, leading: boolean): string {
 				value="${ui.bid}"
 				data-role="bid"
 			/>
-			<button class="btn" data-action="bid-min" data-amount="${min}">최소 ${coin(min)}</button>
+			<button class="btn" data-action="bid-min" data-amount="${min}">최소 ${won(min)}</button>
 			<button class="btn btn--primary" data-action="bid" ${raw(affordable ? "" : "disabled")}>입찰</button>
 		</div>
 		${raw(affordable ? "" : '<p class="err">코인이 부족해 최소 입찰가를 넣을 수 없어요.</p>')}

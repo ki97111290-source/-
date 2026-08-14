@@ -1,4 +1,4 @@
-import { coin, fmt, pct } from "../../core/format";
+import { fmt, pct, won } from "../../core/format";
 import type { Character, GameState } from "../../core/types";
 import { BALANCE } from "../../game/balance";
 import {
@@ -30,8 +30,8 @@ export function renderMarket(state: GameState): string {
 	return html`
 		<section class="panel">
 			<div class="statrow">
-				<div class="stat"><span>평가액</span><b>${coin(value)}</b></div>
-				<div class="stat"><span>평가손익</span><b class="${profit >= 0 ? "up" : "down"}">${coin(profit)}</b></div>
+				<div class="stat"><span>평가액</span><b>${won(value)}</b></div>
+				<div class="stat"><span>평가손익</span><b class="${profit >= 0 ? "up" : "down"}">${won(profit)}</b></div>
 				<div class="stat"><span>다음 배당</span><b>${Math.ceil(state.nextDividendIn)}초</b></div>
 				<div class="stat"><span>배당 배수</span><b>×${dividendMultiplier(state).toFixed(2)}</b></div>
 			</div>
@@ -64,13 +64,13 @@ function row(state: GameState, c: Character): string {
 			</div>
 			<div class="row__spark">${raw(sparkline(c.history, change >= 0 ? "var(--good)" : "var(--bad)"))}</div>
 			<div class="row__price">
-				<b>${coin(c.price)}</b>
+				<b>${won(c.price)}</b>
 				<span class="${change >= 0 ? "up" : "down"}">${pct(change)}</span>
 			</div>
 			<div class="row__hold">
 				${raw(
 					mine > 0
-						? html`<b>${fmt(mine)}주</b><span class="${pnl >= 0 ? "up" : "down"}">${coin(pnl)}</span>`
+						? html`<b>${fmt(mine)}주</b><span class="${pnl >= 0 ? "up" : "down"}">${won(pnl)}</span>`
 						: `<span class="muted">미보유</span><span class="muted">잔량 ${fmt(available)}</span>`,
 				)}
 			</div>
