@@ -30,11 +30,37 @@ export interface GoodsSheet {
 		name: string;
 		icon: string;
 		desc: string;
-		halfLifeHours: number;
-		revenue: string;
+		/** 한정판 매출 배수 */
+		power: string;
+		/** 한 판이 얼마나 오래 가는지 */
+		lasts: string;
 		cost: string;
 		affordable: boolean;
 		current: boolean;
+	}[];
+}
+
+/** 한정판 찍기 시트. 등급 × 가격 조합의 결과를 미리 계산해 보여준다. */
+export interface KitSheet {
+	lineId: string;
+	title: string;
+	/** 지금 팔던 재고를 떨이로 넘기고 시작한다면 얼마를 돌려받는지 */
+	salvage: string;
+	priceSteps: { factor: number; label: string }[];
+	factor: number;
+	kits: {
+		id: string;
+		name: string;
+		icon: string;
+		units: string;
+		locked: boolean;
+		lockLabel: string;
+		cost: string;
+		affordable: boolean;
+		price: string;
+		revenue: string;
+		lasts: string;
+		total: string;
 	}[];
 }
 
@@ -51,6 +77,8 @@ export interface UiState {
 	uploadAgency: string;
 	/** 굿즈 발매 시트. null이면 닫혀 있다. */
 	goodsSheet: GoodsSheet | null;
+	/** 한정판 찍기 시트 */
+	kitSheet: KitSheet | null;
 	bid: string;
 	/** 종목별 주문 수량 입력값 */
 	qty: Record<string, string>;
@@ -69,6 +97,7 @@ export const ui: UiState = {
 	uploadName: "",
 	uploadAgency: "",
 	goodsSheet: null,
+	kitSheet: null,
 	bid: "",
 	qty: {},
 	toast: null,
@@ -84,6 +113,7 @@ export function closeModals(): void {
 	ui.pickerList = null;
 	ui.uploadOpen = false;
 	ui.goodsSheet = null;
+	ui.kitSheet = null;
 }
 
 export const TABS: { id: TabId; label: string; icon: string }[] = [

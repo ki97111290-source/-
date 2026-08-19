@@ -17,8 +17,14 @@ export const BALANCE = {
 	cheerPopularity: 0.9,
 	/** 인기도 소프트캡. 클수록 인기도가 빨리 정체된다. */
 	popularitySoftcap: 0.06,
-	/** 유행이 다 식었을 때 남는 매출 비율. 방치해도 이만큼은 계속 팔린다. */
-	goodsTrendFloor: 0.7,
+	/** 한정판이 없을 때도 상시로 팔리는 비율. 방치해도 이만큼은 계속 들어온다. */
+	goodsBaseShare: 0.7,
+	/** 한정판을 완판하면 키트값의 몇 배가 되는가 (적정가 기준) */
+	goodsMarkup: 2.5,
+	/** 가격 탄력성. 값을 올릴수록 비싸게 팔 때 더 안 팔린다. */
+	goodsElasticity: 1.4,
+	/** 남은 재고를 떨이로 넘길 때 받는 비율 */
+	goodsSalvage: 0.4,
 	/** 굿즈 공장 레벨당 굿즈 매출·배당 배수 */
 	goodsFactoryPerLevel: 0.2,
 	/** 굿즈 라인 최대 개수 */
@@ -166,7 +172,7 @@ export const UPGRADES: readonly UpgradeDef[] = [
 		name: "팬덤 본부",
 		icon: "🏛",
 		tier: 2,
-		baseCost: 8e8,
+		baseCost: 2.4e9,
 		growth: 1.36,
 		maxLevel: 10,
 		desc: (l) => `전체 수입 ×${(1 + l * 0.6).toFixed(2)}`,
@@ -176,7 +182,7 @@ export const UPGRADES: readonly UpgradeDef[] = [
 		name: "글로벌 송출",
 		icon: "🛰",
 		tier: 2,
-		baseCost: 9e8,
+		baseCost: 2.7e9,
 		growth: 1.46,
 		maxLevel: 8,
 		desc: (l) => `인기도 한계 ×${(1 + l * 0.35).toFixed(2)}`,
@@ -186,7 +192,7 @@ export const UPGRADES: readonly UpgradeDef[] = [
 		name: "굿즈 공장",
 		icon: "🏭",
 		tier: 2,
-		baseCost: 7e8,
+		baseCost: 2.1e9,
 		growth: 1.36,
 		maxLevel: 10,
 		desc: (l) => `굿즈 매출·배당 ×${(1 + l * BALANCE.goodsFactoryPerLevel).toFixed(2)}`,

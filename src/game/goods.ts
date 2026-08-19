@@ -1,70 +1,138 @@
 import { uid } from "../core/rng";
-import type { Character, GameState, GoodsLine, GoodsTypeId } from "../core/types";
+import type { Character, GameState, GoodsLine, GoodsTypeId, KitGrade } from "../core/types";
 import { BALANCE } from "./balance";
+import { RIVAL_NAMES } from "./characters";
 import { bonusMultiplier, cheerPush, slotIncome } from "./room";
 import { pushLog, upgradeLevel } from "./state";
 import { traitOf } from "./traits";
-
-const HOUR = 3600 * 1000;
 
 export interface GoodsType {
 	id: GoodsTypeId;
 	name: string;
 	icon: string;
-	/** 매출 배수 */
+	/** 한정판 매출 배수 */
 	revenue: number;
-	/** 유행이 절반으로 식는 데 걸리는 시간(시간) */
-	halfLifeHours: number;
-	/** 발매비 배수 */
-	cost: number;
+	/** 팔려나가는 속도. 클수록 빨리 소진된다. */
+	pace: number;
 	desc: string;
 }
 
 /**
- * 굿즈 종류는 "매출이 큰가"와 "유행이 오래가는가"를 맞바꾼다.
- * 자주 못 들여다보는 사람은 키링을, 관리할 사람은 인형을 고르면 된다.
+ * 굿즈 종류는 "시간당 매출"과 "한 판이 얼마나 오래 가는가"를 맞바꾼다.
+ * 자주 못 들여다보는 사람은 키링을, 자주 챙길 사람은 인형을 고르면 된다.
  */
 export const GOODS_TYPES: readonly GoodsType[] = [
 	{
 		id: "keyring",
 		name: "키링",
 		icon: "🔑",
-		revenue: 1,
-		halfLifeHours: 12,
-		cost: 0.7,
-		desc: "오래 팔린다. 방치할수록 유리",
+		revenue: 0.8,
+		pace: 0.6,
+		desc: "한 판이 오래 간다. 방치할수록 유리",
 	},
 	{
 		id: "acrylic",
 		name: "아크릴 스탠드",
 		icon: "🧊",
-		revenue: 1.3,
-		halfLifeHours: 6,
-		cost: 1,
+		revenue: 1.2,
+		pace: 1,
 		desc: "무난한 기본형",
 	},
 	{
 		id: "photobook",
 		name: "화보집",
 		icon: "📖",
-		revenue: 1.65,
-		halfLifeHours: 3,
-		cost: 1.5,
-		desc: "매출이 크지만 빨리 식는다",
+		revenue: 1.6,
+		pace: 1.5,
+		desc: "매출이 크지만 금방 빠진다",
 	},
 	{
 		id: "plush",
 		name: "인형",
 		icon: "🧸",
-		revenue: 2.15,
-		halfLifeHours: 1.5,
-		cost: 2.2,
-		desc: "폭발적. 자주 재발매해야 한다",
+		revenue: 2.2,
+		pace: 2.2,
+		desc: "폭발적. 자주 다시 찍어야 한다",
 	},
+] as const;
+
+export interface KitDef {
+	id: KitGrade;
+	name: string;
+	icon: string;
+	/** 발행 수량. 등급이 높을수록 적게 찍는다 — 희소성이 값을 만든다. */
+	units: number;
+	/** 적정가로 팔았을 때 한 판이 가는 시간(시간). 종류의 pace로 나뉜다. */
+	hours: number;
+	/** 한정판 매출 배수 */
+	power: number;
+	/** 이 키트를 쓰려면 필요한 이번 시즌 팬심 */
+	fansNeeded: number;
+}
+
+/**
+ * 키트 등급. 위로 갈수록 적게 찍고 비싸게 팔리며, 이번 시즌 팬심으로 잠금이 풀린다.
+ * 팬심은 여전히 쓰이지 않는다 — 소비가 아니라 "살 자격"으로만 쓴다.
+ * 그래서 방치로 쌓은 응원이 굿즈 시장 접근권으로 이어진다.
+ */
+export const KITS: readonly KitDef[] = [
+	{
+		id: "bronze",
+		name: "브론즈 키트",
+		icon: "🥉",
+		units: 500,
+		hours: 4,
+		power: 0.6,
+		fansNeeded: 0,
+	},
+	{
+		id: "silver",
+		name: "실버 키트",
+		icon: "🥈",
+		units: 200,
+		hours: 8,
+		power: 0.9,
+		fansNeeded: 15_000_000,
+	},
+	{
+		id: "gold",
+		name: "골드 키트",
+		icon: "🥇",
+		units: 60,
+		hours: 16,
+		power: 1.3,
+		fansNeeded: 200_000_000,
+	},
+	{
+		id: "limited",
+		name: "한정판 키트",
+		icon: "💎",
+		units: 12,
+		hours: 24,
+		power: 1.8,
+		fansNeeded: 1_200_000_000,
+	},
+] as const;
+
+/** 판매가 선택지. 적정가를 1로 두고 배수로 고른다. */
+export const PRICE_STEPS: readonly { factor: number; label: string }[] = [
+	{ factor: 0.6, label: "떨이" },
+	{ factor: 1, label: "적정가" },
+	{ factor: 1.6, label: "고가" },
+	{ factor: 2.5, label: "프리미엄" },
 ] as const;
 
 export function goodsType(id: GoodsTypeId): GoodsType {
 	return GOODS_TYPES.find((t) => t.id === id) ?? (GOODS_TYPES[1] as GoodsType);
+}
+
+export function kitOf(id: KitGrade): KitDef {
+	return KITS.find((k) => k.id === id) ?? (KITS[0] as KitDef);
+}
+
+/** 이번 시즌 팬심으로 이 키트가 열렸는가 */
+export function kitUnlocked(state: GameState, kit: KitDef): boolean {
+	return state.seasonFans >= kit.fansNeeded;
 }
 
 /** 굿즈 공장이 주는 매출 배수 */
@@ -73,49 +141,42 @@ export function goodsMultiplier(state: GameState): number {
 }
 
 /**
- * 유행도 0~1. 발매 직후 1이고 종류별 반감기로 식다가 하한에서 멈춘다.
- * 하한이 있어서 완전히 방치해도 매출이 0이 되지는 않는다.
+ * 캐릭터 한 명의 굿즈 판매력. 응원 화력에서 나오므로, 응원석에 앉혀
+ * 응원을 몰아줘야 굿즈가 팔린다. 자리에서 빼면 기본 판매력만 남는다.
+ * (굿즈 종류는 여기 들어가지 않는다 — 종류는 한정판에만 영향을 준다)
  */
-export function trendOf(line: GoodsLine, now = Date.now()): number {
-	const floor = BALANCE.goodsTrendFloor;
-	const hours = Math.max(0, (now - line.releasedAt) / HOUR);
-	const decay = 0.5 ** (hours / goodsType(line.type).halfLifeHours);
-	return floor + (1 - floor) * decay;
-}
-
-/** 유행을 빼고 계산한 라인의 초당 매출 (재발매 직후의 매출) */
-export function peakRevenue(state: GameState, line: GoodsLine): number {
-	const character = state.characters[line.characterId];
-	if (!character) return 0;
-	return peakRevenueOf(state, character, line.type);
-}
-
-/**
- * 아직 열지 않은 라인의 매출을 미리 계산한다 (발매비 산정·미리보기용).
- *
- * 판매량은 그 캐릭터가 받는 응원 화력에서 나온다. 응원석에 앉혀 응원을 몰아줘야
- * 굿즈가 팔리고, 자리에서 빼면 기본 판매력만 남는다.
- */
-export function peakRevenueOf(state: GameState, character: Character, type: GoodsTypeId): number {
+export function salesPower(state: GameState, character: Character): number {
 	return (
 		slotIncome(character) *
 		cheerPush(state, character.id) *
-		goodsType(type).revenue *
 		traitOf(character).dividend *
 		goodsMultiplier(state) *
 		bonusMultiplier(state)
 	);
 }
 
-/** 지금 이 라인이 실제로 벌고 있는 초당 매출 */
-export function lineRevenue(state: GameState, line: GoodsLine, now = Date.now()): number {
-	return peakRevenue(state, line) * trendOf(line, now);
+/** 한정판 없이도 늘 들어오는 상시 매출 */
+export function baseRevenue(state: GameState, line: GoodsLine): number {
+	const character = state.characters[line.characterId];
+	if (!character) return 0;
+	return salesPower(state, character) * BALANCE.goodsBaseShare;
+}
+
+/** 한정판이 팔리는 동안 추가로 들어오는 초당 매출 */
+export function editionRevenue(line: GoodsLine): number {
+	const edition = line.edition;
+	if (!edition || edition.stock <= 0) return 0;
+	return edition.demand * edition.price;
+}
+
+export function lineRevenue(state: GameState, line: GoodsLine): number {
+	return baseRevenue(state, line) + editionRevenue(line);
 }
 
 /** 모든 굿즈 라인의 초당 매출 합계. 이 게임의 초당 수입이다. */
-export function goodsRevenue(state: GameState, now = Date.now()): number {
+export function goodsRevenue(state: GameState): number {
 	let total = 0;
-	for (const line of state.goods) total += lineRevenue(state, line, now);
+	for (const line of state.goods) total += lineRevenue(state, line);
 	return total;
 }
 
@@ -123,12 +184,52 @@ export function lineOf(state: GameState, characterId: string): GoodsLine | undef
 	return state.goods.find((line) => line.characterId === characterId);
 }
 
-export function openCost(state: GameState, character: Character, type: GoodsTypeId): number {
-	return Math.ceil(peakRevenueOf(state, character, type) * BALANCE.goodsOpenSeconds);
+export function openCost(state: GameState, character: Character): number {
+	return Math.ceil(salesPower(state, character) * BALANCE.goodsOpenSeconds);
 }
 
-export function rerunCost(state: GameState, line: GoodsLine): number {
-	return Math.ceil(peakRevenue(state, line) * BALANCE.goodsRerunSeconds);
+/** 한정판 한 판이 팔려나가는 데 걸리는 시간(초). 적정가 기준. */
+export function editionSeconds(type: GoodsType, kit: KitDef): number {
+	return (kit.hours * 3600) / type.pace;
+}
+
+/** 적정가로 완판했을 때의 총 매출 */
+export function editionTotal(power: number, type: GoodsType, kit: KitDef): number {
+	return power * type.revenue * kit.power * editionSeconds(type, kit);
+}
+
+/** 개당 적정가 */
+export function fairPrice(power: number, type: GoodsType, kit: KitDef): number {
+	return editionTotal(power, type, kit) / kit.units;
+}
+
+/** 키트 값. 완판하면 이 값의 goodsMarkup 배가 돌아온다. */
+export function kitCost(
+	state: GameState,
+	character: Character,
+	line: GoodsLine,
+	kit: KitDef,
+): number {
+	const power = salesPower(state, character);
+	return Math.ceil(editionTotal(power, goodsType(line.type), kit) / BALANCE.goodsMarkup);
+}
+
+/**
+ * 남은 재고를 떨이로 넘겼을 때 받는 돈.
+ * 판매가가 아니라 **원가(키트값)** 기준이다. 판매가 기준으로 하면 비싸게 내놓고
+ * 곧바로 정리하는 것만으로 키트값보다 많이 돌려받는 돈복사가 된다.
+ */
+export function salvageValue(line: GoodsLine): number {
+	const edition = line.edition;
+	if (!edition || edition.total <= 0) return 0;
+	return Math.floor((edition.stock / edition.total) * edition.cost * BALANCE.goodsSalvage);
+}
+
+/** 지금 속도라면 완판까지 남은 시간(초) */
+export function secondsLeft(line: GoodsLine): number {
+	const edition = line.edition;
+	if (!edition || edition.demand <= 0) return 0;
+	return edition.stock / edition.demand;
 }
 
 export interface GoodsResult {
@@ -137,7 +238,7 @@ export interface GoodsResult {
 }
 
 /**
- * 새 굿즈를 발매한다. 캐릭터 한 명당 라인은 하나뿐이라,
+ * 굿즈 라인을 연다. 캐릭터 한 명당 하나뿐이라,
  * 이미 내고 있는 캐릭터에게 다른 종류를 내면 그 자리에서 갈아탄다.
  */
 export function releaseGoods(
@@ -157,57 +258,111 @@ export function releaseGoods(
 	if (!existing && state.goods.length >= BALANCE.maxGoodsLines) {
 		return { ok: false, message: `굿즈 라인은 ${BALANCE.maxGoodsLines}개까지 열 수 있어요.` };
 	}
-	const cost = openCost(state, character, type);
-	if (state.money < cost) return { ok: false, message: "발매비가 부족해요." };
+	const cost = openCost(state, character);
+	if (state.money < cost) return { ok: false, message: "개설비가 부족해요." };
 
 	state.money -= cost;
-	if (existing) closeGoods(state, existing.id);
+	const def = goodsType(type);
+	if (existing) {
+		// 종류를 바꾸면 팔던 재고는 떨이로 정리한다.
+		const salvage = salvageValue(existing);
+		if (salvage > 0) state.money += salvage;
+		existing.type = type;
+		existing.edition = null;
+		pushLog(state, `${character.name}의 굿즈를 ${def.name}(으)로 바꿨어요.`, "info");
+		return { ok: true, message: `${character.name} ${def.name}(으)로 교체` };
+	}
+
 	state.goods.push({
 		id: uid("gd"),
 		characterId,
 		type,
-		releasedAt: now,
+		createdAt: now,
 		editions: 0,
+		soldOut: 0,
+		edition: null,
 		revenue: 0,
 	});
-	const def = goodsType(type);
-	if (existing) {
-		const from = goodsType(existing.type);
-		pushLog(
-			state,
-			`${character.name}의 굿즈를 ${from.name}에서 ${def.name}(으)로 바꿨어요.`,
-			"info",
-		);
-		return { ok: true, message: `${character.name} ${def.name}(으)로 교체` };
-	}
-	pushLog(state, `${character.name} ${def.name} 발매! ${def.icon} 굿즈 매출이 들어옵니다.`, "good");
-	return { ok: true, message: `${character.name} ${def.name} 발매` };
+	pushLog(state, `${character.name} ${def.name} 판매를 시작했습니다. ${def.icon}`, "good");
+	return { ok: true, message: `${character.name} ${def.name} 개설` };
 }
 
-/** 유행이 식은 라인을 재발매해 다시 1로 되돌린다. */
-export function rerunGoods(state: GameState, lineId: string, now = Date.now()): GoodsResult {
+/**
+ * 키트로 한정판을 찍는다. 팔던 재고가 남아 있으면 떨이로 정리하고 새로 찍는다.
+ * 가격은 제작자가 정하고, 한정 수량이 그 가격을 검증한다 — 비싸게 내면
+ * 천천히 팔려 오래 가고, 싸게 내면 빨리 빠진다.
+ */
+export function printEdition(
+	state: GameState,
+	lineId: string,
+	grade: KitGrade,
+	priceFactor: number,
+	now = Date.now(),
+): GoodsResult {
 	const line = state.goods.find((l) => l.id === lineId);
 	if (!line) return { ok: false, message: "없는 굿즈예요." };
-	const cost = rerunCost(state, line);
-	if (state.money < cost) return { ok: false, message: "재발매비가 부족해요." };
-
-	state.money -= cost;
-	line.releasedAt = now;
-	line.editions += 1;
 	const character = state.characters[line.characterId];
+	if (!character) return { ok: false, message: "캐릭터를 찾지 못했어요." };
+
+	const kit = kitOf(grade);
+	if (!kitUnlocked(state, kit)) {
+		return { ok: false, message: `${kit.name}은(는) 시즌 팬심이 더 필요해요.` };
+	}
+	const cost = kitCost(state, character, line, kit);
+	if (state.money < cost) return { ok: false, message: `${kit.name} 값이 부족해요.` };
+
+	const type = goodsType(line.type);
+	const power = salesPower(state, character);
+	const fair = fairPrice(power, type, kit);
+	if (!(fair > 0)) return { ok: false, message: "아직 팔릴 만한 인기가 아니에요." };
+
+	// 남은 재고는 떨이로 넘기고 새 판을 찍는다.
+	const salvage = salvageValue(line);
+	state.money -= cost;
+	if (salvage > 0) state.money += salvage;
+
+	// 비싸게 내놓을수록 덜 팔린다. 총액은 늘지만 시간이 오래 걸린다.
+	const baseDemand = kit.units / editionSeconds(type, kit);
+	line.edition = {
+		grade,
+		total: kit.units,
+		stock: kit.units,
+		price: fair * priceFactor,
+		cost,
+		demand: baseDemand * priceFactor ** -BALANCE.goodsElasticity,
+		releasedAt: now,
+	};
+	line.editions += 1;
+
+	pushLog(
+		state,
+		`${kit.icon} ${character.name} ${type.name} ${kit.units.toLocaleString("ko-KR")}개 한정 발매!`,
+		"market",
+	);
+	return { ok: true, message: `${kit.name} · ${kit.units.toLocaleString("ko-KR")}개 발매` };
+}
+
+/** 팔던 한정판을 접고 남은 재고를 떨이로 넘긴다. */
+export function scrapEdition(state: GameState, lineId: string): GoodsResult {
+	const line = state.goods.find((l) => l.id === lineId);
+	if (!line?.edition) return { ok: false, message: "팔고 있는 한정판이 없어요." };
+	const salvage = salvageValue(line);
+	line.edition = null;
+	state.money += salvage;
 	return {
 		ok: true,
-		message: `${character?.name ?? "굿즈"} ${goodsType(line.type).name} ${line.editions + 1}차 발매`,
+		message: `재고를 정리하고 ${Math.floor(salvage).toLocaleString("ko-KR")}원 회수`,
 	};
 }
 
-/** 라인을 완전히 접는다. (종류만 바꿀 때는 releaseGoods가 알아서 갈아탄다) */
+/** 라인을 완전히 접는다. */
 export function closeGoods(state: GameState, lineId: string): GoodsResult {
 	const index = state.goods.findIndex((l) => l.id === lineId);
 	if (index < 0) return { ok: false, message: "없는 굿즈예요." };
 	const [line] = state.goods.splice(index, 1);
+	if (line) state.money += salvageValue(line);
 	const character = line ? state.characters[line.characterId] : undefined;
-	return { ok: true, message: `${character?.name ?? "굿즈"} 발매를 종료했어요.` };
+	return { ok: true, message: `${character?.name ?? "굿즈"} 판매를 종료했어요.` };
 }
 
 /** 캐릭터가 사라지면(정리·경매 낙찰) 그 라인도 같이 접는다. */
@@ -217,11 +372,30 @@ export function pruneGoods(state: GameState): void {
 	);
 }
 
-/** 매 스텝 굿즈 매출을 지갑에 넣는다. */
-export function tickGoods(state: GameState, dt: number, now = Date.now()): number {
+/** 매 스텝 굿즈 매출을 지갑에 넣는다. 한정판은 재고가 줄어든다. */
+export function tickGoods(state: GameState, dt: number): number {
 	let total = 0;
 	for (const line of state.goods) {
-		const earned = lineRevenue(state, line, now) * dt;
+		let earned = baseRevenue(state, line) * dt;
+
+		const edition = line.edition;
+		if (edition && edition.stock > 0) {
+			const sold = Math.min(edition.stock, edition.demand * dt);
+			edition.stock -= sold;
+			earned += sold * edition.price;
+			if (edition.stock <= 0) {
+				edition.stock = 0;
+				line.soldOut += 1;
+				const character = state.characters[line.characterId];
+				const buyer = RIVAL_NAMES[(line.soldOut + line.editions) % RIVAL_NAMES.length];
+				pushLog(
+					state,
+					`${character?.name ?? "굿즈"} ${goodsType(line.type).name} 완판! 마지막 한 개는 ${buyer}에게 갔습니다.`,
+					"good",
+				);
+			}
+		}
+
 		line.revenue += earned;
 		total += earned;
 	}

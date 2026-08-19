@@ -1,5 +1,5 @@
 import { html, raw } from "../dom";
-import type { GoodsSheet, PickItem } from "../uiState";
+import type { GoodsSheet, KitSheet, PickItem } from "../uiState";
 import { ui } from "../uiState";
 
 /**
@@ -10,8 +10,58 @@ import { ui } from "../uiState";
 export function renderModal(): string {
 	if (ui.pickerSlot !== null && ui.pickerList) return picker(ui.pickerSlot, ui.pickerList);
 	if (ui.uploadOpen) return uploadForm();
+	if (ui.kitSheet) return kitSheet(ui.kitSheet);
 	if (ui.goodsSheet) return goodsSheet(ui.goodsSheet);
 	return "";
+}
+
+function kitSheet(snap: KitSheet): string {
+	const steps = snap.priceSteps
+		.map(
+			(step) => html`
+			<button class="chip ${step.factor === snap.factor ? "chip--on" : ""}"
+				data-action="kit-price" data-factor="${step.factor}">
+				<span>${step.label}</span>
+				<span class="muted small">×${step.factor}</span>
+			</button>`,
+		)
+		.join("");
+
+	const kits = snap.kits
+		.map(
+			(kit) => html`
+			<div class="gtype ${kit.locked ? "gtype--locked" : ""}">
+				<div class="gtype__icon">${kit.icon}</div>
+				<div class="gtype__body">
+					<h3>${kit.name} · ${kit.units}개 한정</h3>
+					${raw(
+						kit.locked
+							? html`<p class="muted small">${kit.lockLabel}</p>`
+							: html`<p class="muted small">개당 ${kit.price} · 완판까지 약 ${kit.lasts}</p>
+								<div class="kv"><span>매출 <b>${kit.revenue}</b></span><span>완판 총액 <b>${kit.total}</b></span></div>`,
+					)}
+				</div>
+				<button class="btn btn--primary btn--sm" data-action="print-edition"
+					data-id="${snap.lineId}" data-grade="${kit.id}"
+					${kit.locked || !kit.affordable ? "disabled" : ""}>
+					${kit.locked ? "잠김" : kit.cost}
+				</button>
+			</div>`,
+		)
+		.join("");
+
+	return sheet(
+		snap.title,
+		html`
+			<p class="muted small">
+				판매가를 고르세요. 비싸게 내면 천천히 팔려 오래 가고, 싸게 내면 빨리 빠집니다.
+				${snap.salvage}
+			</p>
+			<div class="chips">${raw(steps)}</div>
+			<div class="gtypes">${raw(kits)}</div>
+		`,
+		"close-kit",
+	);
 }
 
 function goodsSheet(snap: GoodsSheet): string {
@@ -39,28 +89,28 @@ function goodsSheet(snap: GoodsSheet): string {
 			<div class="gtype ${type.current ? "gtype--on" : ""}">
 				<div class="gtype__icon">${type.icon}</div>
 				<div class="gtype__body">
-					<h3>${type.name}${type.current ? " · 발매 중" : ""}</h3>
-					<p class="muted small">${type.desc} · 유행 반감기 ${type.halfLifeHours}시간</p>
-					<div class="kv"><span>발매 직후 <b>${type.revenue}</b></span></div>
+					<h3>${type.name}${type.current ? " · 판매 중" : ""}</h3>
+					<p class="muted small">${type.desc}</p>
+					<div class="kv"><span>한정판 매출 <b>${type.power}</b></span><span>한 판 <b>${type.lasts}</b></span></div>
 				</div>
 				<button class="btn btn--primary btn--sm" data-action="release-goods"
 					data-id="${snap.selectedId}" data-type="${type.id}"
 					${type.current || !type.affordable ? "disabled" : ""}>
-					${type.current ? "발매 중" : type.cost}
+					${type.current ? "판매 중" : type.cost}
 				</button>
 			</div>`,
 		)
 		.join("");
 
 	return sheet(
-		snap.currentType ? "굿즈 종류 바꾸기" : "새 굿즈 발매",
+		snap.currentType ? "굿즈 종류 바꾸기" : "새 굿즈 라인",
 		html`
 			<div class="chips">${raw(picks)}</div>
 			<p class="muted small">
 				${
 					snap.currentType
-						? `${snap.selectedName}은(는) 지금 ${snap.currentType}을(를) 내고 있어요. 다른 종류를 고르면 그 자리에서 갈아탑니다.`
-						: `${snap.selectedName}의 인기도가 높을수록 매출도 발매비도 함께 올라갑니다.`
+						? `${snap.selectedName}은(는) 지금 ${snap.currentType}을(를) 내고 있어요. 종류를 바꾸면 팔던 재고는 떨이로 정리됩니다.`
+						: `${snap.selectedName}의 인기도가 높을수록 매출도 개설비도 함께 올라갑니다.`
 				}
 			</p>
 			<div class="gtypes">${raw(types)}</div>
@@ -68,13 +118,13 @@ function goodsSheet(snap: GoodsSheet): string {
 	);
 }
 
-function sheet(title: string, body: string): string {
+function sheet(title: string, body: string, close = "close-goods"): string {
 	return html`
-		<div class="overlay" data-action="close-goods">
+		<div class="overlay" data-action="${close}">
 			<div class="sheet" data-stop="1">
 				<header class="sheet__head">
 					<h2>${title}</h2>
-					<button class="btn btn--ghost btn--sm" data-action="close-goods">닫기</button>
+					<button class="btn btn--ghost btn--sm" data-action="${close}">닫기</button>
 				</header>
 				${raw(body)}
 			</div>

@@ -821,25 +821,72 @@ button:focus-visible {
 
 /* ---------- 굿즈 ---------- */
 
-.trend {
-	display: flex;
-	align-items: center;
-	gap: 8px;
+.edition {
+	display: grid;
+	gap: 4px;
+	margin-top: 2px;
 }
 
-.trend__bar {
-	flex: 1;
+.edition__head {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 12px;
+	flex-wrap: wrap;
+}
+
+.edition__bar {
 	height: 6px;
 	background: var(--track);
 	border-radius: 999px;
 	overflow: hidden;
 }
 
-.trend__bar i {
+.edition__bar i {
 	display: block;
 	height: 100%;
 	background: linear-gradient(90deg, var(--accent), var(--gold));
 	transition: width 0.3s linear;
+}
+
+.kits {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 6px;
+}
+
+.kit {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	grid-template-areas: "icon name" "icon units" "icon lock";
+	gap: 0 8px;
+	align-items: center;
+	padding: 8px 10px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--panel);
+	opacity: 0.55;
+}
+
+.kit--on {
+	opacity: 1;
+	border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.kit__icon {
+	grid-area: icon;
+	font-size: 22px;
+}
+
+.kit__name {
+	grid-area: name;
+	font-weight: 700;
+	font-size: 13px;
+}
+
+.gtype--locked {
+	opacity: 0.55;
+	border-style: dashed;
 }
 
 .slot__link {

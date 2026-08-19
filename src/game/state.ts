@@ -5,7 +5,7 @@ import { BALANCE, OWNER_ME } from "./balance";
 import { createCharacter, seedCharacters } from "./characters";
 import { emptyMeta } from "./season";
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /**
  * 새 시즌판을 깐다. meta(트로피·업로드 캐릭터 보관함)는 그대로 넘겨받고,
@@ -124,8 +124,10 @@ export function openStarterLine(state: GameState, now: number = Date.now()): voi
 		id: uid("gd"),
 		characterId: first,
 		type: "keyring",
-		releasedAt: now,
+		createdAt: now,
 		editions: 0,
+		soldOut: 0,
+		edition: null,
 		revenue: 0,
 	});
 }

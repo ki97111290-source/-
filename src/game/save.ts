@@ -1,6 +1,6 @@
 import { makeRng } from "../core/rng";
 import { SEASON_MODE, newSeasonBounds } from "../core/season";
-import type { GameState, MetaState } from "../core/types";
+import type { GameState, GoodsLine, MetaState } from "../core/types";
 import { pruneGoods } from "./goods";
 import { emptyMeta } from "./season";
 import { SAVE_VERSION, createNewGame, openStarterLine, syncSlots } from "./state";
@@ -117,6 +117,19 @@ export function importSave(text: string): GameState {
 }
 
 /** 오래된/손상된 세이브를 현재 버전 형태로 맞춘다. */
+/** 한정판 도입 이전 라인에는 edition이 없고 createdAt 대신 releasedAt이 있었다. */
+function normalizeLine(line: GoodsLine): GoodsLine {
+	const legacy = line as GoodsLine & { releasedAt?: number };
+	return {
+		...line,
+		createdAt: Number.isFinite(line.createdAt) ? line.createdAt : (legacy.releasedAt ?? Date.now()),
+		editions: Number.isFinite(line.editions) ? line.editions : 0,
+		soldOut: Number.isFinite(line.soldOut) ? line.soldOut : 0,
+		revenue: Number.isFinite(line.revenue) ? line.revenue : 0,
+		edition: line.edition ?? null,
+	};
+}
+
 function migrate(raw: Partial<GameState>): GameState | null {
 	if (!raw || typeof raw !== "object" || !raw.characters || !Array.isArray(raw.owned)) return null;
 
@@ -130,7 +143,7 @@ function migrate(raw: Partial<GameState>): GameState | null {
 		characters: raw.characters,
 		log: Array.isArray(raw.log) ? raw.log : [],
 		slots: Array.isArray(raw.slots) ? raw.slots : [null],
-		goods: Array.isArray(raw.goods) ? raw.goods : [],
+		goods: Array.isArray(raw.goods) ? raw.goods.map(normalizeLine) : [],
 	};
 
 	// 참조 무결성: 사라진 캐릭터를 가리키는 슬롯/보유목록/포트폴리오 정리

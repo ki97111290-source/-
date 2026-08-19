@@ -37,19 +37,44 @@ export interface Character {
 
 export type GoodsTypeId = "keyring" | "acrylic" | "photobook" | "plush";
 
+/** 굿즈 제작 키트 등급. 높을수록 적게 찍고 비싸게 팔린다. */
+export type KitGrade = "bronze" | "silver" | "gold" | "limited";
+
 /**
- * 굿즈 발매 라인. 캐릭터 한 명당 하나만 열 수 있고, 열려 있는 동안
- * 그 캐릭터의 인기도를 돈으로 바꿔준다. 유행은 발매 시점부터 식으므로
- * 따로 틱을 돌리지 않고 releasedAt 하나로 계산한다.
+ * 한정 에디션. 키트로 찍어낸 한 판이며, 재고가 다 팔리면 끝난다.
+ * 수량과 가격이 발매 시점에 확정되므로 그 뒤로는 시세를 따라가지 않는다.
+ */
+export interface GoodsEdition {
+	grade: KitGrade;
+	/** 발행 수량 */
+	total: number;
+	/** 남은 재고 */
+	stock: number;
+	/** 개당 판매가(원) */
+	price: number;
+	/** 이 판을 찍는 데 든 키트값. 떨이 회수액의 기준이 된다. */
+	cost: number;
+	/** 초당 팔려나가는 수량. 가격을 올리면 느려진다. */
+	demand: number;
+	releasedAt: number;
+}
+
+/**
+ * 굿즈 발매 라인. 캐릭터 한 명당 하나만 열 수 있다.
+ * 라인 자체는 재고 없이 늘 조금씩 팔리고(상시 판매), 그 위에 한정 에디션을
+ * 얹으면 재고가 소진될 때까지 매출이 크게 뛴다.
  */
 export interface GoodsLine {
 	id: string;
 	characterId: string;
 	type: GoodsTypeId;
-	/** 마지막 발매(재발매 포함) 시각. 유행도의 기준점이다. */
-	releasedAt: number;
-	/** 재발매 횟수 */
+	createdAt: number;
+	/** 지금까지 찍어낸 한정판 수 */
 	editions: number;
+	/** 완판시킨 횟수 */
+	soldOut: number;
+	/** 판매 중인 한정판. null이면 상시 판매만 돈다. */
+	edition: GoodsEdition | null;
 	/** 이 라인이 지금까지 벌어들인 원 */
 	revenue: number;
 }

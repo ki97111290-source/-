@@ -25,7 +25,7 @@ export const TROPHY_TIERS: readonly TrophyTier[] = [
 	{ id: "silver", name: "실버", icon: "🥈", need: 15_000_000, points: 3, color: "#c0c8d8" },
 	// D13 — 핵심 설비 완성 직전
 	{ id: "gold", name: "골드", icon: "🥇", need: 200_000_000, points: 7, color: "#ffd66b" },
-	// D17 — 최종 설비 중반
+	// D18 — 최종 설비 중반
 	{
 		id: "platinum",
 		name: "플래티넘",
@@ -34,9 +34,9 @@ export const TROPHY_TIERS: readonly TrophyTier[] = [
 		points: 14,
 		color: "#67e8f9",
 	},
-	// D23 — 결산 주간
-	{ id: "diamond", name: "다이아", icon: "💎", need: 3_800_000_000, points: 25, color: "#a78bfa" },
-	// D30 — 시즌을 끝까지 완주해야 닿는다
+	// D25 — 결산 주간. 굿즈를 거의 안 챙긴 방치 플레이도 여기까지는 닿는다
+	{ id: "diamond", name: "다이아", icon: "💎", need: 3_200_000_000, points: 25, color: "#a78bfa" },
+	// D29 — 완주하면서 한정판까지 부지런히 찍어야 닿는다
 	{ id: "master", name: "마스터", icon: "👑", need: 6_800_000_000, points: 45, color: "#ff5c9d" },
 ] as const;
 

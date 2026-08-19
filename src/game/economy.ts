@@ -35,8 +35,8 @@ export function popularitySoftcap(state: GameState): number {
  * 응원은 더 이상 돈을 만들지 않는다 — 응원은 인기도를 올리고, 그 인기도를
  * 굿즈가 돈으로 바꾼다. 그래서 수입은 곧 굿즈 매출이다.
  */
-export function incomePerSecond(state: GameState, now = Date.now()): number {
-	return goodsRevenue(state, now);
+export function incomePerSecond(state: GameState): number {
+	return goodsRevenue(state);
 }
 
 /** 룸 전체에서 초당 오르는 인기도 (응원석에 앉은 캐릭터 합산) */
@@ -106,9 +106,9 @@ export function cheer(state: GameState, characterId: string, power = 1): void {
 }
 
 /** 매 시뮬레이션 스텝마다 도는 기본 경제 로직 */
-export function tickEconomy(state: GameState, dt: number, now = Date.now()): void {
+export function tickEconomy(state: GameState, dt: number): void {
 	// 돈이 들어오는 유일한 상시 경로: 굿즈 판매
-	addMoney(state, tickGoods(state, dt, now));
+	addMoney(state, tickGoods(state, dt));
 
 	// 응원은 켜두기만 하면 알아서 돌아간다. 응원석에 앉은 캐릭터에게 골고루 들어간다.
 	const perSlot = cheersPerSlot(state) * dt;
@@ -142,7 +142,8 @@ export function applyOffline(state: GameState, now = Date.now()): OfflineReport 
 	const capped = elapsed > BALANCE.offlineCap;
 	const seconds = Math.min(elapsed, BALANCE.offlineCap);
 	const efficiency = offlineEfficiency(state);
-	const money = incomePerSecond(state, now) * seconds * efficiency;
+	// 굿즈 정산 경로를 그대로 쓴다. 그래야 닫아둔 동안 팔린 만큼 재고도 줄어든다.
+	const money = tickGoods(state, seconds * efficiency);
 
 	addMoney(state, money);
 	// 닫아둔 동안에도 응원 횟수는 같은 효율로 쌓인다. 트로피 진행이 완전히 멈추면

@@ -1,22 +1,32 @@
-import { fans, fmt, rate, won } from "../core/format";
+import { duration, fans, fmt, rate, won } from "../core/format";
 import { remainingLabel, remainingOf } from "../core/season";
 import type { GameState } from "../core/types";
 import { buyUpgrade, seat, uploadCharacter } from "../game/actions";
 import { consign, placePlayerBid } from "../game/auction";
 import { fileToAvatar } from "../game/avatar";
+import { BALANCE } from "../game/balance";
 import { ownedCharacters } from "../game/characters";
 import { cheersPerSlot, incomePerSecond, slotIncome } from "../game/economy";
 import type { Engine } from "../game/engine";
 import {
 	GOODS_TYPES,
+	KITS,
+	type KitDef,
+	PRICE_STEPS,
 	closeGoods,
+	editionSeconds,
+	fairPrice,
 	goodsType,
+	kitCost,
+	kitUnlocked,
 	lineOf,
 	lineRevenue,
 	openCost,
-	peakRevenueOf,
+	printEdition,
 	releaseGoods,
-	rerunGoods,
+	salesPower,
+	salvageValue,
+	scrapEdition,
 } from "../game/goods";
 import { buyShares, sellShares } from "../game/market";
 import { clearSave, exportSave, importSave, saveGame } from "../game/save";
@@ -24,6 +34,7 @@ import { html, paint } from "./dom";
 import { effectiveTheme, toggleTheme } from "./theme";
 import {
 	type GoodsSheet,
+	type KitSheet,
 	type PickItem,
 	TABS,
 	type TabId,
@@ -251,17 +262,57 @@ function snapshotGoods(state: GameState, characterId: string | null): GoodsSheet
 		selectedName: selected?.name ?? "",
 		currentType: current ? goodsType(current.type).name : null,
 		types: GOODS_TYPES.map((type) => {
-			const cost = selected ? openCost(state, selected, type.id) : 0;
+			const cost = selected ? openCost(state, selected) : 0;
+			const bronze = KITS[0] as KitDef;
 			return {
 				id: type.id,
 				name: type.name,
 				icon: type.icon,
 				desc: type.desc,
-				halfLifeHours: type.halfLifeHours,
-				revenue: rate(selected ? peakRevenueOf(state, selected, type.id) : 0),
+				power: `×${type.revenue.toFixed(1)}`,
+				lasts: duration(editionSeconds(type, bronze)),
 				cost: won(cost),
 				affordable: state.money >= cost,
 				current: current?.type === type.id,
+			};
+		}),
+	};
+}
+
+/** 한정판 찍기 시트 스냅샷. 등급 × 지금 고른 가격의 결과를 미리 계산한다. */
+function snapshotKit(state: GameState, lineId: string, factor: number): KitSheet | null {
+	const line = state.goods.find((l) => l.id === lineId);
+	const character = line ? state.characters[line.characterId] : undefined;
+	if (!line || !character) return null;
+
+	const type = goodsType(line.type);
+	const power = salesPower(state, character);
+	const salvage = salvageValue(line);
+
+	return {
+		lineId,
+		title: `${character.name} ${type.name} 한정판`,
+		salvage: salvage > 0 ? `팔던 재고는 떨이로 정리되어 ${won(salvage)}이 돌아옵니다.` : "",
+		priceSteps: PRICE_STEPS.map((s) => ({ ...s })),
+		factor,
+		kits: KITS.map((kit) => {
+			const cost = kitCost(state, character, line, kit);
+			const fair = fairPrice(power, type, kit);
+			// 비싸게 낼수록 덜 팔린다. 총액은 늘지만 완판까지 오래 걸린다.
+			const demand = (kit.units / editionSeconds(type, kit)) * factor ** -BALANCE.goodsElasticity;
+			return {
+				id: kit.id,
+				name: kit.name,
+				icon: kit.icon,
+				units: kit.units.toLocaleString("ko-KR"),
+				locked: !kitUnlocked(state, kit),
+				lockLabel: `시즌 팬심 ${fmt(kit.fansNeeded)} 필요`,
+				cost: won(cost),
+				affordable: state.money >= cost,
+				price: won(fair * factor),
+				revenue: rate(demand * fair * factor),
+				lasts: duration(kit.units / demand),
+				total: won(kit.units * fair * factor),
 			};
 		}),
 	};
@@ -379,9 +430,35 @@ function onClick(event: MouseEvent, engine: Engine): void {
 			break;
 		}
 
-		case "rerun": {
-			const res = rerunGoods(state, id);
+		case "open-kit":
+			ui.kitSheet = snapshotKit(state, id, 1);
+			break;
+
+		case "close-kit":
+			closeModals();
+			break;
+
+		case "kit-price":
+			if (ui.kitSheet) {
+				ui.kitSheet = snapshotKit(
+					state,
+					ui.kitSheet.lineId,
+					Number(actionEl.dataset.factor ?? "1"),
+				);
+			}
+			break;
+
+		case "print-edition": {
+			const grade = actionEl.dataset.grade as Parameters<typeof printEdition>[2];
+			const res = printEdition(state, id, grade, ui.kitSheet?.factor ?? 1);
 			toast(res.message, res.ok ? "good" : "bad");
+			if (res.ok) closeModals();
+			break;
+		}
+
+		case "scrap": {
+			const res = scrapEdition(state, id);
+			toast(res.message, res.ok ? "info" : "bad");
 			break;
 		}
 
