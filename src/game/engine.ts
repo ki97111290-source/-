@@ -4,14 +4,8 @@ import type { GameState } from "../core/types";
 import { checkAchievements } from "./achievements";
 import { tickAuction } from "./auction";
 import { BALANCE } from "./balance";
-import {
-	addMoney,
-	cheer,
-	cheersPerSlot,
-	incomePerSecond,
-	occupiedSlots,
-	tickEconomy,
-} from "./economy";
+import { addMoney, cheer, cheersPerSlot, occupiedSlots, tickEconomy } from "./economy";
+import { tickGoods } from "./goods";
 import { tickMarket } from "./market";
 import { saveGame } from "./save";
 import { type SeasonReport, rolloverIfNeeded, tierOf } from "./season";
@@ -65,7 +59,8 @@ export class Engine {
 			// 브라우저가 백그라운드 탭의 프레임을 늦춘 경우다. 페이지는 켜져 있으므로
 			// 감산 없이 100% 정산한다. (효율이 깎이는 건 페이지를 닫았을 때뿐)
 			const seconds = Math.min(dt, BALANCE.offlineCap);
-			addMoney(this.state, incomePerSecond(this.state) * seconds);
+			// 라인별 누적 매출까지 함께 남도록 굿즈 정산 경로를 그대로 쓴다.
+			addMoney(this.state, tickGoods(this.state, seconds));
 			this.growPopularity(seconds);
 			this.step(BALANCE.step);
 			this.persist(AUTOSAVE);
@@ -81,20 +76,12 @@ export class Engine {
 		this.persist(dt);
 	}
 
-	/** 프레임이 오래 멈춘 구간의 인기도 상승을 한 번에 반영한다. */
+	/** 프레임이 오래 멈춘 구간의 응원(팬심·인기도)을 한 번에 반영한다. */
 	private growPopularity(seconds: number): void {
 		const perSlot = cheersPerSlot(this.state) * seconds;
 		if (perSlot <= 0) return;
-		for (const id of occupiedSlots(this.state)) {
-			const character = this.state.characters[id];
-			if (!character) continue;
-			// 코인은 위에서 이미 정산했으므로 인기도만 올린다.
-			const coins = this.state.money;
-			const earned = this.state.totalEarned;
-			cheer(this.state, id, perSlot);
-			this.state.money = coins;
-			this.state.totalEarned = earned;
-		}
+		// 응원은 돈을 만들지 않으므로 그대로 한 번에 넣어주면 된다.
+		for (const id of occupiedSlots(this.state)) cheer(this.state, id, perSlot);
 	}
 
 	private step(dt: number): void {

@@ -1,32 +1,21 @@
 import type { Character, GameState } from "../core/types";
 import { BALANCE } from "./balance";
-import { honorMultiplier } from "./season";
+import { goodsRevenue, tickGoods } from "./goods";
+import { cheerMultiplier, cheersPerSecond, cheersPerSlot, occupiedSlots } from "./room";
 import { upgradeLevel } from "./state";
 import { traitOf } from "./traits";
 
-/** 응원석에 앉은 캐릭터 한 명의 기본 초당 코인 (명성·응원 제외) */
-export function slotIncome(character: Character): number {
-	return (
-		BALANCE.baseIncome *
-		(1 + character.popularity * BALANCE.incomeFromPopularity) *
-		traitOf(character).income
-	);
-}
-
-/** 이번 시즌에 쌓은 명성이 주는 수입 배수 (시즌이 끝나면 사라진다) */
-export function fameMultiplier(state: GameState): number {
-	return 1 + state.fame * BALANCE.famePerPoint;
-}
-
-/** 팬덤 본부(3주차 설비)가 주는 전체 수입 배수 */
-export function hqMultiplier(state: GameState): number {
-	return 1 + upgradeLevel(state, "hq") * 0.6;
-}
-
-/** 명성(시즌) × 명예(트로피, 영구) × 팬덤 본부를 합친 전체 수입 배수 */
-export function bonusMultiplier(state: GameState): number {
-	return fameMultiplier(state) * honorMultiplier(state.meta) * hqMultiplier(state);
-}
+export {
+	bonusMultiplier,
+	cheerMultiplier,
+	cheerPush,
+	cheersPerSecond,
+	cheersPerSlot,
+	fameMultiplier,
+	hqMultiplier,
+	occupiedSlots,
+	slotIncome,
+} from "./room";
 
 /** 홍보 대행사가 주는 인기도 상승 배수 */
 export function promoMultiplier(state: GameState): number {
@@ -41,50 +30,13 @@ export function popularitySoftcap(state: GameState): number {
 	return BALANCE.popularitySoftcap / (1 + upgradeLevel(state, "global") * 0.35);
 }
 
-export function occupiedSlots(state: GameState): string[] {
-	return state.slots.filter((id): id is string => Boolean(id));
-}
-
-/** 응원석에 앉아 있기만 해도 들어오는 초당 코인 */
-export function passiveIncome(state: GameState): number {
-	let total = 0;
-	for (const id of occupiedSlots(state)) {
-		const character = state.characters[id];
-		if (character) total += slotIncome(character);
-	}
-	return total * bonusMultiplier(state);
-}
-
-export function cheerMultiplier(state: GameState): number {
-	return 1 + upgradeLevel(state, "cheerPower") * 0.5;
-}
-
-/** 룸 전체의 초당 응원 횟수. 업그레이드 없이도 기본값만큼 돌아간다. */
-export function cheersPerSecond(state: GameState): number {
-	return BALANCE.baseCheerRate + upgradeLevel(state, "autoCheer") * BALANCE.cheerRatePerLevel;
-}
-
-/** 캐릭터 한 명이 초당 받는 응원 횟수 */
-export function cheersPerSlot(state: GameState): number {
-	const count = occupiedSlots(state).length;
-	return count === 0 ? 0 : cheersPerSecond(state) / count;
-}
-
-/** 자동 응원이 만들어내는 초당 코인 */
-export function cheerIncome(state: GameState): number {
-	const perSlot = cheersPerSlot(state);
-	if (perSlot <= 0) return 0;
-	let total = 0;
-	for (const id of occupiedSlots(state)) {
-		const character = state.characters[id];
-		if (character) total += slotIncome(character) * BALANCE.cheerBurst * perSlot;
-	}
-	return total * cheerMultiplier(state) * bonusMultiplier(state);
-}
-
-/** 화면에 보여주는 실제 총 초당 수입 */
-export function incomePerSecond(state: GameState): number {
-	return passiveIncome(state) + cheerIncome(state);
+/**
+ * 화면에 보여주는 실제 총 초당 수입.
+ * 응원은 더 이상 돈을 만들지 않는다 — 응원은 인기도를 올리고, 그 인기도를
+ * 굿즈가 돈으로 바꾼다. 그래서 수입은 곧 굿즈 매출이다.
+ */
+export function incomePerSecond(state: GameState, now = Date.now()): number {
+	return goodsRevenue(state, now);
 }
 
 /** 룸 전체에서 초당 오르는 인기도 (응원석에 앉은 캐릭터 합산) */
@@ -138,16 +90,15 @@ export function addMoney(state: GameState, amount: number): void {
 /**
  * 응원. power는 "응원 몇 회분인가"를 뜻하며 소수도 들어온다.
  * 인기도가 높을수록 같은 응원의 체감 효과는 줄어든다(소프트 캡).
+ * 응원 자체는 돈을 만들지 않는다. 팬심과 인기도만 만든다.
  */
 export function cheer(state: GameState, characterId: string, power = 1): void {
 	const character = state.characters[characterId];
 	if (!character) return;
-	const mult = cheerMultiplier(state) * power;
 
 	character.popularity += popularityGain(state, character, power);
-	character.hype += 0.12 * mult;
+	character.hype += 0.12 * cheerMultiplier(state) * power;
 
-	addMoney(state, slotIncome(character) * BALANCE.cheerBurst * mult * bonusMultiplier(state));
 	state.totalCheers += power;
 	state.seasonCheers += power;
 	// 팬심은 시즌 점수다. 돈과 달리 쓰이지 않고 쌓이기만 한다.
@@ -155,8 +106,9 @@ export function cheer(state: GameState, characterId: string, power = 1): void {
 }
 
 /** 매 시뮬레이션 스텝마다 도는 기본 경제 로직 */
-export function tickEconomy(state: GameState, dt: number): void {
-	addMoney(state, passiveIncome(state) * dt);
+export function tickEconomy(state: GameState, dt: number, now = Date.now()): void {
+	// 돈이 들어오는 유일한 상시 경로: 굿즈 판매
+	addMoney(state, tickGoods(state, dt, now));
 
 	// 응원은 켜두기만 하면 알아서 돌아간다. 응원석에 앉은 캐릭터에게 골고루 들어간다.
 	const perSlot = cheersPerSlot(state) * dt;
@@ -189,12 +141,12 @@ export function applyOffline(state: GameState, now = Date.now()): OfflineReport 
 	}
 	const capped = elapsed > BALANCE.offlineCap;
 	const seconds = Math.min(elapsed, BALANCE.offlineCap);
-	const money = incomePerSecond(state) * seconds * offlineEfficiency(state);
+	const efficiency = offlineEfficiency(state);
+	const money = incomePerSecond(state, now) * seconds * efficiency;
 
 	addMoney(state, money);
 	// 닫아둔 동안에도 응원 횟수는 같은 효율로 쌓인다. 트로피 진행이 완전히 멈추면
 	// "켜두면 되는 게임"이 "24시간 켜둬야 하는 게임"이 되어버린다.
-	const efficiency = offlineEfficiency(state);
 	const offlineCheers = cheersPerSecond(state) * seconds * efficiency;
 	state.totalCheers += offlineCheers;
 	state.seasonCheers += offlineCheers;

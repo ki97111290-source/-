@@ -35,6 +35,25 @@ export interface Character {
 	createdAt: number;
 }
 
+export type GoodsTypeId = "keyring" | "acrylic" | "photobook" | "plush";
+
+/**
+ * 굿즈 발매 라인. 캐릭터 한 명당 하나만 열 수 있고, 열려 있는 동안
+ * 그 캐릭터의 인기도를 돈으로 바꿔준다. 유행은 발매 시점부터 식으므로
+ * 따로 틱을 돌리지 않고 releasedAt 하나로 계산한다.
+ */
+export interface GoodsLine {
+	id: string;
+	characterId: string;
+	type: GoodsTypeId;
+	/** 마지막 발매(재발매 포함) 시각. 유행도의 기준점이다. */
+	releasedAt: number;
+	/** 재발매 횟수 */
+	editions: number;
+	/** 이 라인이 지금까지 벌어들인 원 */
+	revenue: number;
+}
+
 export type UpgradeId =
 	| "cheerPower"
 	| "autoCheer"
@@ -139,6 +158,8 @@ export interface GameState {
 	slots: (string | null)[];
 	/** 보유 주식 */
 	portfolio: Record<string, Holding>;
+	/** 발매 중인 굿즈 라인. 이 게임에서 돈이 들어오는 주 통로다. */
+	goods: GoodsLine[];
 
 	upgrades: Record<UpgradeId, number>;
 

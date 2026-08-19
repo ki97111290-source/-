@@ -17,6 +17,16 @@ export const BALANCE = {
 	cheerPopularity: 0.9,
 	/** 인기도 소프트캡. 클수록 인기도가 빨리 정체된다. */
 	popularitySoftcap: 0.06,
+	/** 유행이 다 식었을 때 남는 매출 비율. 방치해도 이만큼은 계속 팔린다. */
+	goodsTrendFloor: 0.7,
+	/** 굿즈 공장 레벨당 굿즈 매출·배당 배수 */
+	goodsFactoryPerLevel: 0.2,
+	/** 굿즈 라인 최대 개수 */
+	maxGoodsLines: 8,
+	/** 새 라인 발매비 = 그 라인의 유행 만땅 매출 × 이 초 */
+	goodsOpenSeconds: 1800,
+	/** 재발매비 = 그 라인의 유행 만땅 매출 × 이 초 */
+	goodsRerunSeconds: 480,
 	/** 응원 1회가 주는 코인 = 그 캐릭터의 초당 수입 * 이 배수 */
 	cheerBurst: 1.2,
 	/** 업그레이드 없이도 돌아가는 기본 응원 속도(회/초) */
@@ -179,7 +189,7 @@ export const UPGRADES: readonly UpgradeDef[] = [
 		baseCost: 7e8,
 		growth: 1.36,
 		maxLevel: 10,
-		desc: (l) => `배당 ×${(1 + l * 0.35).toFixed(2)}`,
+		desc: (l) => `굿즈 매출·배당 ×${(1 + l * BALANCE.goodsFactoryPerLevel).toFixed(2)}`,
 	},
 ] as const;
 

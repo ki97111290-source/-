@@ -18,7 +18,7 @@ export function tradeFee(state: GameState): number {
 
 export function dividendMultiplier(state: GameState, now = Date.now()): number {
 	const broker = 1 + upgradeLevel(state, "broker") * 0.12;
-	const goods = 1 + upgradeLevel(state, "goods") * 0.35;
+	const goods = 1 + upgradeLevel(state, "goods") * BALANCE.goodsFactoryPerLevel;
 	// 4주차는 결산 주간이다. 더 살 설비가 없으니 배당으로 굴리라는 신호.
 	const finalWeek = seasonWeekOf(state.seasonStartedAt, now) >= 3 ? BALANCE.finalWeekDividend : 1;
 	return broker * goods * finalWeek;

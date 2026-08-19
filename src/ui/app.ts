@@ -4,22 +4,35 @@ import type { GameState } from "../core/types";
 import { buyUpgrade, seat, uploadCharacter } from "../game/actions";
 import { consign, placePlayerBid } from "../game/auction";
 import { fileToAvatar } from "../game/avatar";
-import { BALANCE } from "../game/balance";
 import { ownedCharacters } from "../game/characters";
-import {
-	cheerMultiplier,
-	cheersPerSlot,
-	fameMultiplier,
-	incomePerSecond,
-	slotIncome,
-} from "../game/economy";
+import { cheersPerSlot, incomePerSecond, slotIncome } from "../game/economy";
 import type { Engine } from "../game/engine";
+import {
+	GOODS_TYPES,
+	closeGoods,
+	goodsType,
+	lineOf,
+	lineRevenue,
+	openCost,
+	peakRevenueOf,
+	releaseGoods,
+	rerunGoods,
+} from "../game/goods";
 import { buyShares, sellShares } from "../game/market";
 import { clearSave, exportSave, importSave, saveGame } from "../game/save";
 import { html, paint } from "./dom";
 import { effectiveTheme, toggleTheme } from "./theme";
-import { type PickItem, TABS, type TabId, closeModals, toast, ui } from "./uiState";
+import {
+	type GoodsSheet,
+	type PickItem,
+	TABS,
+	type TabId,
+	closeModals,
+	toast,
+	ui,
+} from "./uiState";
 import { renderAuction } from "./views/auctionView";
+import { renderGoods } from "./views/goods";
 import { renderMarket } from "./views/market";
 import { renderModal } from "./views/modals";
 import { renderRoom } from "./views/room";
@@ -145,6 +158,8 @@ function renderView(state: GameState): string {
 			return renderRoom(state);
 		case "roster":
 			return renderRoster(state);
+		case "goods":
+			return renderGoods(state);
 		case "auction":
 			return renderAuction(state);
 		case "market":
@@ -214,6 +229,42 @@ function snapshotOwned(state: GameState): PickItem[] {
 		income: fmt(slotIncome(c)),
 		seated: state.slots.includes(c.id),
 	}));
+}
+
+/** 굿즈 발매 시트에 뿌릴 스냅샷. 열 때와 캐릭터를 고를 때만 다시 만든다. */
+function snapshotGoods(state: GameState, characterId: string | null): GoodsSheet {
+	const owned = ownedCharacters(state);
+	const selected = owned.find((c) => c.id === characterId) ?? owned[0];
+	const current = selected ? lineOf(state, selected.id) : undefined;
+
+	return {
+		picks: owned.map((c) => {
+			const line = lineOf(state, c.id);
+			return {
+				id: c.id,
+				name: c.name,
+				avatar: c.avatar,
+				typeIcon: line ? goodsType(line.type).icon : "＋",
+			};
+		}),
+		selectedId: selected?.id ?? "",
+		selectedName: selected?.name ?? "",
+		currentType: current ? goodsType(current.type).name : null,
+		types: GOODS_TYPES.map((type) => {
+			const cost = selected ? openCost(state, selected, type.id) : 0;
+			return {
+				id: type.id,
+				name: type.name,
+				icon: type.icon,
+				desc: type.desc,
+				halfLifeHours: type.halfLifeHours,
+				revenue: rate(selected ? peakRevenueOf(state, selected, type.id) : 0),
+				cost: won(cost),
+				affordable: state.money >= cost,
+				current: current?.type === type.id,
+			};
+		}),
+	};
 }
 
 function onClick(event: MouseEvent, engine: Engine): void {
@@ -304,6 +355,39 @@ function onClick(event: MouseEvent, engine: Engine): void {
 		case "upgrade": {
 			const res = buyUpgrade(state, id as Parameters<typeof buyUpgrade>[1]);
 			toast(res.message, res.ok ? "good" : "bad");
+			break;
+		}
+
+		// 라인 카드에서 열었으면 그 캐릭터를 미리 골라둔다
+		case "open-goods":
+			ui.goodsSheet = snapshotGoods(state, id || null);
+			break;
+
+		case "close-goods":
+			closeModals();
+			break;
+
+		case "goods-pick":
+			ui.goodsSheet = snapshotGoods(state, id);
+			break;
+
+		case "release-goods": {
+			const type = actionEl.dataset.type as Parameters<typeof releaseGoods>[2];
+			const res = releaseGoods(state, id, type);
+			toast(res.message, res.ok ? "good" : "bad");
+			if (res.ok) closeModals();
+			break;
+		}
+
+		case "rerun": {
+			const res = rerunGoods(state, id);
+			toast(res.message, res.ok ? "good" : "bad");
+			break;
+		}
+
+		case "close-goods-line": {
+			const res = closeGoods(state, id);
+			toast(res.message, res.ok ? "info" : "bad");
 			break;
 		}
 
@@ -416,12 +500,10 @@ function spawnIdleGains(view: HTMLElement, state: GameState, now: number): void 
 		if (now < due) continue;
 		nextFloatAt.set(id, now + interval);
 
-		const character = state.characters[id];
-		if (!character) continue;
-		const perSecond =
-			slotIncome(character) *
-			(1 + BALANCE.cheerBurst * perSlot * cheerMultiplier(state)) *
-			fameMultiplier(state);
+		// 돈은 굿즈에서 나오므로, 굿즈를 내고 있는 캐릭터 위에만 매출이 떠오른다.
+		const line = lineOf(state, id);
+		if (!line) continue;
+		const perSecond = lineRevenue(state, line);
 		const rect = el.getBoundingClientRect();
 		floatGain(
 			rect.left + rect.width / 2 + (Math.random() * 44 - 22),

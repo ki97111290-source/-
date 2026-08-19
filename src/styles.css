@@ -166,6 +166,11 @@ img {
 	margin: 0 auto;
 }
 
+/* 그리드 아이템의 기본 min-width: auto 때문에 헤더·탭이 화면을 밀어낸다 */
+.shell > * {
+	min-width: 0;
+}
+
 .hud {
 	display: flex;
 	align-items: center;
@@ -179,6 +184,10 @@ img {
 	font-size: 15px;
 	letter-spacing: -0.02em;
 	white-space: nowrap;
+	/* 좁은 화면에서 제목이 지갑을 밀어내지 않도록 줄어들 수 있게 둔다 */
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .brand__mark {
@@ -189,6 +198,7 @@ img {
 	display: flex;
 	align-items: center;
 	gap: 10px;
+	flex: none;
 	min-width: 0;
 }
 
@@ -581,6 +591,8 @@ button:focus-visible {
 	font-weight: 600;
 	color: var(--muted);
 	letter-spacing: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .seasonhead {
@@ -805,6 +817,101 @@ button:focus-visible {
 }
 .quest__reward b {
 	color: var(--gold);
+}
+
+/* ---------- 굿즈 ---------- */
+
+.trend {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.trend__bar {
+	flex: 1;
+	height: 6px;
+	background: var(--track);
+	border-radius: 999px;
+	overflow: hidden;
+}
+
+.trend__bar i {
+	display: block;
+	height: 100%;
+	background: linear-gradient(90deg, var(--accent), var(--gold));
+	transition: width 0.3s linear;
+}
+
+.slot__link {
+	cursor: pointer;
+	text-decoration: underline dotted;
+}
+
+.chips {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 10px 5px 5px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: var(--panel);
+	color: inherit;
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.chip .ava {
+	width: 24px;
+	height: 24px;
+	border-radius: 999px;
+}
+
+.chip--on {
+	border-color: var(--accent);
+	background: color-mix(in srgb, var(--accent) 14%, var(--panel));
+	font-weight: 700;
+}
+
+.gtypes {
+	display: grid;
+	gap: 8px;
+}
+
+.gtype {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	gap: 10px;
+	align-items: center;
+	background: var(--panel);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	padding: 10px 12px;
+}
+
+.gtype--on {
+	border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+	background: color-mix(in srgb, var(--accent) 9%, var(--panel));
+}
+
+.gtype__icon {
+	font-size: 24px;
+}
+
+.gtype__body {
+	min-width: 0;
+	display: grid;
+	gap: 2px;
+}
+
+.gtype__body h3 {
+	font-size: 14px;
 }
 
 /* ---------- 캐릭터 목록 ---------- */

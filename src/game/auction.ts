@@ -3,6 +3,7 @@ import type { AuctionState, GameState } from "../core/types";
 import { BALANCE, OWNER_ME } from "./balance";
 import { RIVAL_NAMES, appraise, createCharacter, pruneCharacters } from "./characters";
 import { addMoney } from "./economy";
+import { pruneGoods } from "./goods";
 import { pushLog, syncSlots } from "./state";
 
 const NO_BID = "유찰 대기";
@@ -65,6 +66,8 @@ export function consign(state: GameState, characterId: string, rng: Rng): string
 
 	state.owned = state.owned.filter((id) => id !== characterId);
 	state.slots = state.slots.map((id) => (id === characterId ? null : id));
+	// 출품하면 그 캐릭터의 굿즈 발매도 함께 내린다.
+	pruneGoods(state);
 	state.auction = makeAuction(state, characterId, true, rng);
 
 	const character = state.characters[characterId];
@@ -201,6 +204,7 @@ function settle(state: GameState): void {
 	state.auction = null;
 	state.nextAuctionIn = BALANCE.auctionPeriod;
 	pruneCharacters(state);
+	pruneGoods(state);
 }
 
 /** 빈 응원석이 있으면 새 캐릭터를 바로 앉힌다. */

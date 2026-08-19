@@ -1,8 +1,9 @@
 import { makeRng } from "../core/rng";
 import { SEASON_MODE, newSeasonBounds } from "../core/season";
 import type { GameState, MetaState } from "../core/types";
+import { pruneGoods } from "./goods";
 import { emptyMeta } from "./season";
-import { SAVE_VERSION, createNewGame, syncSlots } from "./state";
+import { SAVE_VERSION, createNewGame, openStarterLine, syncSlots } from "./state";
 import { rollTrait } from "./traits";
 
 /** 더 이상 존재하지 않는 과제 id (콤보 제거 · 주차 커브 도입) */
@@ -129,6 +130,7 @@ function migrate(raw: Partial<GameState>): GameState | null {
 		characters: raw.characters,
 		log: Array.isArray(raw.log) ? raw.log : [],
 		slots: Array.isArray(raw.slots) ? raw.slots : [null],
+		goods: Array.isArray(raw.goods) ? raw.goods : [],
 	};
 
 	// 참조 무결성: 사라진 캐릭터를 가리키는 슬롯/보유목록/포트폴리오 정리
@@ -169,5 +171,9 @@ function migrate(raw: Partial<GameState>): GameState | null {
 	state.money = Number.isFinite(state.money) ? state.money : 0;
 	state.lastTick = Number.isFinite(state.lastTick) ? state.lastTick : Date.now();
 	syncSlots(state);
+	// 굿즈 도입 이전 세이브에는 라인이 없다. 그대로 두면 수입이 0이 되므로
+	// 응원석의 첫 캐릭터에게 라인을 하나 열어주고 시작한다.
+	pruneGoods(state);
+	openStarterLine(state);
 	return state;
 }

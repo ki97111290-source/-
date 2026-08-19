@@ -7,8 +7,8 @@ import {
 	fameMultiplier,
 	fansPerSecond,
 	incomePerSecond,
-	slotIncome,
 } from "../../game/economy";
+import { lineOf, lineRevenue } from "../../game/goods";
 import { slotCount } from "../../game/state";
 import { traitOf } from "../../game/traits";
 import { html, raw } from "../dom";
@@ -31,15 +31,15 @@ export function renderRoom(state: GameState): string {
 	return html`
 		<section class="panel">
 			<div class="statrow">
-				<div class="stat"><span>초당 수입</span><b>${rate(incomePerSecond(state))}</b></div>
+				<div class="stat"><span>굿즈 매출</span><b>${rate(incomePerSecond(state))}</b></div>
 				<div class="stat"><span>응원 속도</span><b>${cheersPerSecond(state).toFixed(1)}회/초</b></div>
 				<div class="stat"><span>응원 위력</span><b>×${cheerMultiplier(state).toFixed(2)}</b></div>
 				<div class="stat"><span>팬심 상승</span><b>💜 +${fmt(fansPerSecond(state))}/초</b></div>
 			</div>
 			<p class="hint">
-				응원은 <b>💜 팬심</b>(시즌 성적)과 <b>원</b>(지갑)을 따로 만듭니다.
-				팬심은 인기도가 높은 캐릭터를 응원할수록 많이 쌓이고 트로피 등급을 정합니다.
-				돈은 쓰지만 팬심은 쌓이기만 해요. 명성 보너스 ×${fameMultiplier(state).toFixed(2)} 적용 중.
+				응원은 <b>💜 팬심</b>(시즌 성적)과 <b>인기도</b>를 올립니다. 돈은 응원에서 바로 나오지 않고,
+				<b>굿즈</b>가 그 인기도를 원으로 바꿔요. 팬심은 쓰이지 않고 쌓이기만 합니다.
+				명성 보너스 ×${fameMultiplier(state).toFixed(2)} 적용 중.
 			</p>
 			<div class="slots">${raw(slots)}${raw(lockedCard)}</div>
 		</section>
@@ -58,11 +58,20 @@ function filledSlot(state: GameState, id: string, index: number): string {
 			<p class="muted">${trait.icon} ${trait.name}</p>
 			<div class="slot__stats">
 				<span title="인기도">🔥 ${fmt(character.popularity)}</span>
-				<span title="초당 수입">💰 ${rate(slotIncome(character))}</span>
+				${raw(goodsStat(state, character.id))}
 			</div>
 			<button class="btn btn--ghost btn--sm" data-action="open-picker" data-slot="${index}">교체</button>
 		</article>
 	`;
+}
+
+/** 굿즈를 내고 있으면 매출을, 아니면 발매하러 가라고 알려준다. */
+function goodsStat(state: GameState, characterId: string): string {
+	const line = lineOf(state, characterId);
+	if (!line) {
+		return html`<span title="굿즈 미발매"><a class="slot__link" data-action="tab" data-id="goods">🏭 굿즈 없음</a></span>`;
+	}
+	return html`<span title="굿즈 매출">💰 ${rate(lineRevenue(state, line))}</span>`;
 }
 
 function emptySlot(index: number): string {

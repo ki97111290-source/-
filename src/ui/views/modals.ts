@@ -1,16 +1,85 @@
 import { html, raw } from "../dom";
-import type { PickItem } from "../uiState";
+import type { GoodsSheet, PickItem } from "../uiState";
 import { ui } from "../uiState";
 
 /**
- * 모달은 본문 뷰와 달리 매 프레임 다시 그리지 않는다.
- * (다시 그리면 입력 중이던 값과 한글 조합이 날아간다)
+ * 모달은 본문 뷰와 달리 매 프레임 다시 그리지 않는다. 다시 그리면 입력 중이던 값과
+ * 한글 조합이 날아가고, 버튼이 눌리는 순간 교체되어 탭이 씹힌다.
  * 그래서 마크업이 실시간 수치에 의존하지 않도록 열린 시점의 스냅샷만 사용한다.
  */
 export function renderModal(): string {
 	if (ui.pickerSlot !== null && ui.pickerList) return picker(ui.pickerSlot, ui.pickerList);
 	if (ui.uploadOpen) return uploadForm();
+	if (ui.goodsSheet) return goodsSheet(ui.goodsSheet);
 	return "";
+}
+
+function goodsSheet(snap: GoodsSheet): string {
+	if (snap.picks.length === 0) {
+		return sheet(
+			"굿즈 발매",
+			'<p class="notice">굿즈를 낼 캐릭터가 없어요. 경매장에서 데려오거나 새로 등록해보세요.</p>',
+		);
+	}
+
+	const picks = snap.picks
+		.map(
+			(c) => html`
+			<button class="chip ${c.id === snap.selectedId ? "chip--on" : ""}" data-action="goods-pick" data-id="${c.id}">
+				<img class="ava" src="${c.avatar}" alt="" />
+				<span>${c.name}</span>
+				<span class="muted small">${c.typeIcon}</span>
+			</button>`,
+		)
+		.join("");
+
+	const types = snap.types
+		.map(
+			(type) => html`
+			<div class="gtype ${type.current ? "gtype--on" : ""}">
+				<div class="gtype__icon">${type.icon}</div>
+				<div class="gtype__body">
+					<h3>${type.name}${type.current ? " · 발매 중" : ""}</h3>
+					<p class="muted small">${type.desc} · 유행 반감기 ${type.halfLifeHours}시간</p>
+					<div class="kv"><span>발매 직후 <b>${type.revenue}</b></span></div>
+				</div>
+				<button class="btn btn--primary btn--sm" data-action="release-goods"
+					data-id="${snap.selectedId}" data-type="${type.id}"
+					${type.current || !type.affordable ? "disabled" : ""}>
+					${type.current ? "발매 중" : type.cost}
+				</button>
+			</div>`,
+		)
+		.join("");
+
+	return sheet(
+		snap.currentType ? "굿즈 종류 바꾸기" : "새 굿즈 발매",
+		html`
+			<div class="chips">${raw(picks)}</div>
+			<p class="muted small">
+				${
+					snap.currentType
+						? `${snap.selectedName}은(는) 지금 ${snap.currentType}을(를) 내고 있어요. 다른 종류를 고르면 그 자리에서 갈아탑니다.`
+						: `${snap.selectedName}의 인기도가 높을수록 매출도 발매비도 함께 올라갑니다.`
+				}
+			</p>
+			<div class="gtypes">${raw(types)}</div>
+		`,
+	);
+}
+
+function sheet(title: string, body: string): string {
+	return html`
+		<div class="overlay" data-action="close-goods">
+			<div class="sheet" data-stop="1">
+				<header class="sheet__head">
+					<h2>${title}</h2>
+					<button class="btn btn--ghost btn--sm" data-action="close-goods">닫기</button>
+				</header>
+				${raw(body)}
+			</div>
+		</div>
+	`;
 }
 
 function picker(slotIndex: number, list: PickItem[]): string {
@@ -20,7 +89,7 @@ function picker(slotIndex: number, list: PickItem[]): string {
 			<button class="pick" data-action="seat" data-slot="${slotIndex}" data-id="${c.id}">
 				<img class="ava" src="${c.avatar}" alt="" />
 				<span class="pick__name">${c.name}</span>
-				<span class="muted">🔥 ${c.popularity} · ${c.income} C/초${c.seated ? " · 응원 중" : ""}</span>
+				<span class="muted">🔥 ${c.popularity} · 판매력 ${c.income}${c.seated ? " · 응원 중" : ""}</span>
 			</button>`,
 		)
 		.join("");

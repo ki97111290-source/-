@@ -1,11 +1,11 @@
-import { makeRng } from "../core/rng";
+import { makeRng, uid } from "../core/rng";
 import { type SeasonBounds, newSeasonBounds } from "../core/season";
 import type { GameState, LogEntry, MetaState, UpgradeId } from "../core/types";
 import { BALANCE, OWNER_ME } from "./balance";
 import { createCharacter, seedCharacters } from "./characters";
 import { emptyMeta } from "./season";
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /**
  * 새 시즌판을 깐다. meta(트로피·업로드 캐릭터 보관함)는 그대로 넘겨받고,
@@ -37,6 +37,7 @@ export function createNewGame(
 		owned: [],
 		slots: [null],
 		portfolio: {},
+		goods: [],
 		upgrades: {
 			cheerPower: 0,
 			autoCheer: 0,
@@ -93,18 +94,40 @@ export function createNewGame(
 		state.owned.push(starter.id);
 	}
 	state.slots[0] = state.owned[0] ?? null;
+	// 첫 굿즈 라인은 무료로 열어준다. 돈이 굿즈에서만 나오므로 이게 없으면
+	// 새 시즌 첫 화면의 수입이 0이 되어버린다.
+	openStarterLine(state, now);
 
 	pushLog(
 		state,
 		`시드머니 ${BALANCE.seedMoney.toLocaleString("ko-KR")}원으로 시작합니다. 켜두기만 하면 응원이 알아서 돌아가요.`,
 		"good",
 	);
+	pushLog(state, "첫 굿즈(키링)가 발매됐습니다. 돈은 ‘굿즈’ 탭에서 들어와요.", "market");
 	if (meta.roster.length > 0) {
 		pushLog(state, `보관함의 캐릭터 ${meta.roster.length}명이 다시 데뷔했습니다.`, "info");
 	} else {
 		pushLog(state, "‘캐릭터’ 탭에서 내 최애를 직접 업로드할 수 있어요.", "info");
 	}
 	return state;
+}
+
+/**
+ * 첫 캐릭터의 굿즈 라인을 무료로 열어준다.
+ * (새 시즌·구버전 세이브 모두 여기를 거쳐 수입 0으로 시작하지 않게 한다)
+ */
+export function openStarterLine(state: GameState, now: number = Date.now()): void {
+	if (state.goods.length > 0) return;
+	const first = state.slots.find((id): id is string => Boolean(id)) ?? state.owned[0];
+	if (!first) return;
+	state.goods.push({
+		id: uid("gd"),
+		characterId: first,
+		type: "keyring",
+		releasedAt: now,
+		editions: 0,
+		revenue: 0,
+	});
 }
 
 export function pushLog(state: GameState, text: string, kind: LogEntry["kind"] = "info"): void {
