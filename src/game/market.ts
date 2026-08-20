@@ -3,7 +3,7 @@ import { seasonWeekOf } from "../core/season";
 import type { Character, GameState } from "../core/types";
 import { BALANCE } from "./balance";
 import { fairPrice } from "./characters";
-import { addMoney } from "./economy";
+import { addMoney, cheersPerSlot, popularityGain } from "./economy";
 import { pushLog, upgradeLevel } from "./state";
 import { traitOf } from "./traits";
 
@@ -35,6 +35,27 @@ export function holdingValue(state: GameState, id: string): number {
 	const character = state.characters[id];
 	if (!holding || !character) return 0;
 	return holding.shares * character.price;
+}
+
+/**
+ * 적정가 대비 현재가. 음수면 저평가(싸게 사는 중), 양수면 고평가.
+ * 주가는 매 스텝 적정가 쪽으로 끌려가므로 이 값은 곧 "되돌아올 방향"이다.
+ */
+export function valuation(character: Character): number {
+	const fair = fairPrice(character);
+	return fair <= 0 ? 0 : character.price / fair - 1;
+}
+
+/**
+ * 초당 순 인기도 변화(상승분 − 자연 감소).
+ * 인기도를 올려주는 건 응원뿐이고 응원은 내 응원석에만 들어가므로,
+ * 결국 "내가 응원 중인 캐릭터만 오를 종목"이 된다.
+ */
+export function popularityTrend(state: GameState, character: Character): number {
+	const seated = state.slots.includes(character.id);
+	const gain = seated ? popularityGain(state, character, cheersPerSlot(state)) : 0;
+	const decay = BALANCE.popularityDecay * traitOf(character).decay * character.popularity;
+	return gain - decay;
 }
 
 /** 최근 이력 대비 등락률 */

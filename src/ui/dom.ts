@@ -65,10 +65,12 @@ export function paint(container: HTMLElement, markup: string): void {
 	restoreFocus(container, snap);
 }
 
-export function sparkline(values: number[], color: string): string {
+/** fair를 주면 적정가 위치에 점선을 그어 고평가/저평가가 눈에 보이게 한다. */
+export function sparkline(values: number[], color: string, fair?: number): string {
 	if (values.length < 2) return `<svg class="spark" viewBox="0 0 100 28" aria-hidden="true"></svg>`;
-	const min = Math.min(...values);
-	const max = Math.max(...values);
+	const withFair = fair !== undefined && Number.isFinite(fair) ? [...values, fair] : values;
+	const min = Math.min(...withFair);
+	const max = Math.max(...withFair);
 	const span = max - min || 1;
 	const points = values
 		.map((v, i) => {
@@ -77,7 +79,12 @@ export function sparkline(values: number[], color: string): string {
 			return `${x.toFixed(1)},${y.toFixed(1)}`;
 		})
 		.join(" ");
+	const fairLine =
+		fair !== undefined && Number.isFinite(fair)
+			? `<line x1="0" x2="100" y1="${(26 - ((fair - min) / span) * 24).toFixed(1)}" y2="${(26 - ((fair - min) / span) * 24).toFixed(1)}" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>`
+			: "";
 	return `<svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+		${fairLine}
 		<polyline points="${points}" fill="none" stroke="${esc(color)}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 	</svg>`;
 }

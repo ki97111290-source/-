@@ -51,7 +51,7 @@ export function popularityPerSecond(state: GameState): number {
 	return total;
 }
 
-function popularityGain(state: GameState, character: Character, power: number): number {
+export function popularityGain(state: GameState, character: Character, power: number): number {
 	const raw =
 		BALANCE.cheerPopularity *
 		cheerMultiplier(state) *
