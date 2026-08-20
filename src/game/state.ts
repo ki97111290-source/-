@@ -128,6 +128,7 @@ export function openStarterLine(state: GameState, now: number = Date.now()): voi
 		editions: 0,
 		soldOut: 0,
 		edition: null,
+		auction: null,
 		revenue: 0,
 	});
 }

@@ -27,6 +27,7 @@ function normalizeMeta(raw: MetaState | undefined, state: GameState): MetaState 
 			? raw.bestFans
 			: // 팬심 도입 이전 세이브는 응원 수를 그대로 옮겨 담는다
 				((raw as { bestCheers?: number }).bestCheers ?? 0);
+		meta.titles = Array.isArray(raw.titles) ? raw.titles : [];
 		return meta;
 	}
 	for (const character of Object.values(state.characters ?? {})) {
@@ -127,6 +128,7 @@ function normalizeLine(line: GoodsLine): GoodsLine {
 		soldOut: Number.isFinite(line.soldOut) ? line.soldOut : 0,
 		revenue: Number.isFinite(line.revenue) ? line.revenue : 0,
 		edition: line.edition ?? null,
+		auction: line.auction ?? null,
 	};
 }
 

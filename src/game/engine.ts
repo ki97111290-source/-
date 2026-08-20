@@ -5,7 +5,7 @@ import { checkAchievements } from "./achievements";
 import { tickAuction } from "./auction";
 import { BALANCE } from "./balance";
 import { addMoney, cheer, cheersPerSlot, occupiedSlots, tickEconomy } from "./economy";
-import { tickGoods } from "./goods";
+import { tickGoods, tickGoodsAuctions } from "./goods";
 import { tickMarket } from "./market";
 import { saveGame } from "./save";
 import { type SeasonReport, rolloverIfNeeded, tierOf } from "./season";
@@ -86,6 +86,8 @@ export class Engine {
 
 	private step(dt: number): void {
 		tickEconomy(this.state, dt);
+		// 유일본 경매는 시계로 돈다. 페이지를 닫아둬도 그동안 입찰이 들어와 있다.
+		tickGoodsAuctions(this.state);
 		tickMarket(this.state, dt, this.rng);
 		tickAuction(this.state, dt, this.rng);
 		checkAchievements(this.state);

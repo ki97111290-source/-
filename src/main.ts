@@ -2,6 +2,7 @@ import { duration, won } from "./core/format";
 import { seasonLabel } from "./core/season";
 import { applyOffline } from "./game/economy";
 import { Engine } from "./game/engine";
+import { tickGoodsAuctions } from "./game/goods";
 import { loadGame } from "./game/save";
 import { rolloverIfNeeded, tierOf } from "./game/season";
 import { createNewGame, pushLog } from "./game/state";
@@ -31,6 +32,9 @@ if (!fresh) {
 		);
 	}
 }
+
+// 닫아둔 사이에 유일본 경매가 진행됐을 수 있다. 켜자마자 정산한다.
+tickGoodsAuctions(state);
 
 const engine = new Engine(state);
 // 닫아둔 사이에 시즌이 넘어갔다면 켜자마자 정산한다.

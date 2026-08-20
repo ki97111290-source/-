@@ -38,7 +38,33 @@ export interface Character {
 export type GoodsTypeId = "keyring" | "acrylic" | "photobook" | "plush";
 
 /** 굿즈 제작 키트 등급. 높을수록 적게 찍고 비싸게 팔린다. */
-export type KitGrade = "bronze" | "silver" | "gold" | "limited";
+export type KitGrade = "bronze" | "silver" | "gold" | "limited" | "unique";
+
+/** 유일본 경매에 들어온 입찰 한 건 */
+export interface GoodsBid {
+	bidder: string;
+	amount: number;
+	/** 경매 시작으로부터 몇 초 뒤에 들어오는가 */
+	at: number;
+}
+
+/**
+ * 유일본(1개)은 재고를 흘려보내는 대신 경매에 올린다.
+ * 입찰 일정은 시작할 때 통째로 정해두고 시간이 지나면 하나씩 공개한다.
+ * 그래야 페이지를 닫아둬도 경매가 같은 결과로 진행된다.
+ */
+export interface GoodsAuction {
+	grade: KitGrade;
+	/** 내가 부른 시작가 */
+	startPrice: number;
+	/** 키트값. 유찰됐을 때 회수액의 기준이다. */
+	cost: number;
+	startedAt: number;
+	endsAt: number;
+	schedule: GoodsBid[];
+	/** 지금까지 공개된 입찰 수 */
+	revealed: number;
+}
 
 /**
  * 한정 에디션. 키트로 찍어낸 한 판이며, 재고가 다 팔리면 끝난다.
@@ -75,6 +101,8 @@ export interface GoodsLine {
 	soldOut: number;
 	/** 판매 중인 한정판. null이면 상시 판매만 돈다. */
 	edition: GoodsEdition | null;
+	/** 진행 중인 유일본 경매. edition과 동시에 존재하지 않는다. */
+	auction: GoodsAuction | null;
 	/** 이 라인이 지금까지 벌어들인 원 */
 	revenue: number;
 }
@@ -144,6 +172,8 @@ export interface MetaState {
 	seasonsPlayed: number;
 	/** 역대 최고 시즌 팬심 */
 	bestFans: number;
+	/** 획득한 칭호 id. 시즌이 바뀌어도 남는다. */
+	titles: string[];
 }
 
 export interface LogEntry {

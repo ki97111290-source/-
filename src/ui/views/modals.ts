@@ -33,12 +33,16 @@ function kitSheet(snap: KitSheet): string {
 			<div class="gtype ${kit.locked ? "gtype--locked" : ""}">
 				<div class="gtype__icon">${kit.icon}</div>
 				<div class="gtype__body">
-					<h3>${kit.name} · ${kit.units}개 한정</h3>
+					<h3>${kit.name} · ${kit.auctioned ? "단 1개" : `${kit.units}개 한정`}</h3>
+					${raw(kit.title ? html`<span class="badge">칭호 ${kit.title}</span>` : "")}
 					${raw(
 						kit.locked
 							? html`<p class="muted small">${kit.lockLabel}</p>`
-							: html`<p class="muted small">개당 ${kit.price} · 완판까지 약 ${kit.lasts}</p>
-								<div class="kv"><span>매출 <b>${kit.revenue}</b></span><span>완판 총액 <b>${kit.total}</b></span></div>`,
+							: kit.auctioned
+								? html`<p class="muted small">시작가 ${kit.price} · ${kit.lasts} 동안 경매</p>
+									<div class="kv"><span class="muted">수집가가 시작가를 넘겨야 팔립니다. 유찰되면 원가 일부만 회수돼요.</span></div>`
+								: html`<p class="muted small">개당 ${kit.price} · 완판까지 약 ${kit.lasts}</p>
+									<div class="kv"><span>매출 <b>${kit.revenue}</b></span><span>완판 총액 <b>${kit.total}</b></span></div>`,
 					)}
 				</div>
 				<button class="btn btn--primary btn--sm" data-action="print-edition"

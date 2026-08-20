@@ -10,6 +10,7 @@ import {
 } from "../../core/season";
 import type { GameState } from "../../core/types";
 import { TROPHY_TIERS, honorMultiplier, nextTrophy, tierOf, trophyFor } from "../../game/season";
+import { TITLES } from "../../game/titles";
 import { html, raw } from "../dom";
 
 export function renderSeason(state: GameState): string {
@@ -47,6 +48,8 @@ export function renderSeason(state: GameState): string {
 
 			<h2 class="section-title">등급표</h2>
 			<div class="tiers">${raw(TROPHY_TIERS.map((tier) => tierRow(tier.id, fanPoints)).join(""))}</div>
+
+			${raw(titleCase(state))}
 
 			<h2 class="section-title">트로피 진열장 ${meta.trophies.length}개</h2>
 			<div class="cabinet">${raw(cabinet(state))}</div>
@@ -122,6 +125,24 @@ function tierRow(id: string, fanPoints: number): string {
 			<span class="muted">팬심 ${fmt(tier.need)}</span>
 			<span class="tier__pt">명예 +${tier.points}</span>
 		</div>
+	`;
+}
+
+/** 굿즈로 얻는 칭호 진열장. 트로피와 달리 "무엇을 만들어 팔았나"에 붙는다. */
+function titleCase(state: GameState): string {
+	const owned = state.meta.titles;
+	const rows = TITLES.map((title) => {
+		const on = owned.includes(title.id);
+		return html`
+			<div class="titlecard ${on ? "titlecard--on" : ""}">
+				<span class="titlecard__icon">${title.icon}</span>
+				<b>${title.name}</b>
+				<span class="muted small">${title.desc}</span>
+			</div>`;
+	}).join("");
+	return html`
+		<h2 class="section-title">칭호 ${owned.length}/${TITLES.length}</h2>
+		<div class="titles">${raw(rows)}</div>
 	`;
 }
 

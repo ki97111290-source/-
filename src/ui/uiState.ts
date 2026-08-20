@@ -53,6 +53,10 @@ export interface KitSheet {
 		name: string;
 		icon: string;
 		units: string;
+		/** 이 등급에 붙는 칭호 */
+		title: string | null;
+		/** 유일본은 흘려 파는 대신 경매에 올린다 */
+		auctioned: boolean;
 		locked: boolean;
 		lockLabel: string;
 		cost: string;

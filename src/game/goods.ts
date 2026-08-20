@@ -1,9 +1,18 @@
-import { uid } from "../core/rng";
-import type { Character, GameState, GoodsLine, GoodsTypeId, KitGrade } from "../core/types";
+import { type Rng, range, uid } from "../core/rng";
+import type {
+	Character,
+	GameState,
+	GoodsAuction,
+	GoodsBid,
+	GoodsLine,
+	GoodsTypeId,
+	KitGrade,
+} from "../core/types";
 import { BALANCE } from "./balance";
 import { RIVAL_NAMES } from "./characters";
 import { bonusMultiplier, cheerPush, slotIncome } from "./room";
 import { pushLog, upgradeLevel } from "./state";
+import { awardTitle } from "./titles";
 import { traitOf } from "./traits";
 
 export interface GoodsType {
@@ -68,6 +77,10 @@ export interface KitDef {
 	power: number;
 	/** 이 키트를 쓰려면 필요한 이번 시즌 팬심 */
 	fansNeeded: number;
+	/** 이 등급에만 붙는 칭호. 없으면 null */
+	title: string | null;
+	/** 1개뿐이라 흘려 팔 수 없고 경매에 올린다 */
+	auctioned?: boolean;
 }
 
 /**
@@ -84,33 +97,48 @@ export const KITS: readonly KitDef[] = [
 		hours: 4,
 		power: 0.6,
 		fansNeeded: 0,
+		title: null,
 	},
 	{
 		id: "silver",
 		name: "실버 키트",
 		icon: "🥈",
-		units: 200,
+		units: 300,
 		hours: 8,
 		power: 0.9,
 		fansNeeded: 15_000_000,
+		title: null,
 	},
 	{
 		id: "gold",
 		name: "골드 키트",
 		icon: "🥇",
-		units: 60,
-		hours: 16,
+		units: 200,
+		hours: 14,
 		power: 1.3,
 		fansNeeded: 200_000_000,
+		title: null,
 	},
 	{
 		id: "limited",
 		name: "한정판 키트",
-		icon: "💎",
-		units: 12,
-		hours: 24,
-		power: 1.8,
+		icon: "🏅",
+		units: 100,
+		hours: 20,
+		power: 1.7,
 		fansNeeded: 1_200_000_000,
+		title: "한정판",
+	},
+	{
+		id: "unique",
+		name: "유일본 키트",
+		icon: "👑",
+		units: 1,
+		hours: 8,
+		power: 2.4,
+		fansNeeded: 3_200_000_000,
+		title: "유일본",
+		auctioned: true,
 	},
 ] as const;
 
@@ -232,6 +260,54 @@ export function secondsLeft(line: GoodsLine): number {
 	return edition.stock / edition.demand;
 }
 
+/** 유일본 경매가 도는 시간(초). 한정판이 다 팔려나가는 시간과 같은 기준을 쓴다. */
+export function auctionSeconds(type: GoodsType, kit: KitDef): number {
+	return editionSeconds(type, kit);
+}
+
+/** 지금까지 나온 최고 입찰 */
+export function topBid(auction: GoodsAuction): GoodsBid | null {
+	return auction.revealed > 0 ? (auction.schedule[auction.revealed - 1] ?? null) : null;
+}
+
+export function auctionSecondsLeft(auction: GoodsAuction, now = Date.now()): number {
+	return Math.max(0, (auction.endsAt - now) / 1000);
+}
+
+/** 유찰됐을 때 돌려받는 돈 */
+export function auctionSalvage(auction: GoodsAuction): number {
+	return Math.floor(auction.cost * BALANCE.goodsSalvage);
+}
+
+/**
+ * 수집가들의 입찰 일정을 미리 뽑아둔다.
+ * 시작가가 비쌀수록 지갑이 닿는 수집가가 줄어 유찰 위험이 커진다.
+ * 시작 시점에 전부 정해두므로 페이지를 닫아둬도 같은 결과가 나온다.
+ */
+function buildSchedule(fair: number, startPrice: number, seconds: number, rng: Rng): GoodsBid[] {
+	const names = [...RIVAL_NAMES].sort(() => rng() - 0.5);
+	// 수집가 지갑은 적정가 근처에 몰려 있고 위로 얇게 늘어진다(rng^3).
+	// 그래서 적정가는 대체로 팔리고, 프리미엄은 가끔만 터지는 도박이 된다.
+	const budgets = names
+		.slice(0, 4)
+		.map((name) => ({ name, budget: fair * (0.5 + 2.5 * rng() ** 3) }))
+		.filter((r) => r.budget >= startPrice)
+		.sort((a, b) => a.budget - b.budget);
+
+	const bids: GoodsBid[] = [];
+	let current = startPrice;
+	// 늦게 들어온 입찰일수록 값이 올라가도록 시간순으로 정렬한다
+	const times = budgets.map(() => range(rng, 0.05, 0.98) * seconds).sort((a, b) => a - b);
+	budgets.forEach((rival, i) => {
+		// 첫 입찰은 시작가 그대로, 그 뒤로는 최소 인상률만큼 올려 부른다
+		const next = i === 0 ? startPrice : current * (1 + BALANCE.minRaise + rng() * 0.25);
+		if (next > rival.budget) return;
+		current = next;
+		bids.push({ bidder: rival.name, amount: Math.ceil(next), at: times[i] ?? 0 });
+	});
+	return bids;
+}
+
 export interface GoodsResult {
 	ok: boolean;
 	message: string;
@@ -281,6 +357,7 @@ export function releaseGoods(
 		editions: 0,
 		soldOut: 0,
 		edition: null,
+		auction: null,
 		revenue: 0,
 	});
 	pushLog(state, `${character.name} ${def.name} 판매를 시작했습니다. ${def.icon}`, "good");
@@ -298,11 +375,13 @@ export function printEdition(
 	grade: KitGrade,
 	priceFactor: number,
 	now = Date.now(),
+	rng: Rng = Math.random,
 ): GoodsResult {
 	const line = state.goods.find((l) => l.id === lineId);
 	if (!line) return { ok: false, message: "없는 굿즈예요." };
 	const character = state.characters[line.characterId];
 	if (!character) return { ok: false, message: "캐릭터를 찾지 못했어요." };
+	if (line.auction) return { ok: false, message: "유일본 경매가 끝나야 다시 찍을 수 있어요." };
 
 	const kit = kitOf(grade);
 	if (!kitUnlocked(state, kit)) {
@@ -320,6 +399,32 @@ export function printEdition(
 	const salvage = salvageValue(line);
 	state.money -= cost;
 	if (salvage > 0) state.money += salvage;
+
+	// 유일본은 1개뿐이라 흘려 팔 수 없다. 경매에 올리고 수집가를 기다린다.
+	if (kit.auctioned) {
+		const seconds = auctionSeconds(type, kit);
+		const startPrice = Math.ceil(fair * priceFactor);
+		line.edition = null;
+		line.auction = {
+			grade,
+			startPrice,
+			cost,
+			startedAt: now,
+			endsAt: now + seconds * 1000,
+			schedule: buildSchedule(fair, startPrice, seconds, rng),
+			revealed: 0,
+		};
+		line.editions += 1;
+		pushLog(
+			state,
+			`${kit.icon} ${character.name} ${type.name} 유일본 경매 시작! 시작가 ${Math.floor(startPrice).toLocaleString("ko-KR")}원`,
+			"market",
+		);
+		return {
+			ok: true,
+			message: `유일본 경매 시작 · 시작가 ${Math.floor(startPrice).toLocaleString("ko-KR")}원`,
+		};
+	}
 
 	// 비싸게 내놓을수록 덜 팔린다. 총액은 늘지만 시간이 오래 걸린다.
 	const baseDemand = kit.units / editionSeconds(type, kit);
@@ -342,6 +447,96 @@ export function printEdition(
 	return { ok: true, message: `${kit.name} · ${kit.units.toLocaleString("ko-KR")}개 발매` };
 }
 
+/**
+ * 유일본 경매를 지금 끝내고 최고 입찰을 받는다.
+ * 더 기다리면 값이 오를 수도 있지만, 지금 확정할 수도 있다.
+ */
+export function acceptTopBid(state: GameState, lineId: string, now = Date.now()): GoodsResult {
+	const line = state.goods.find((l) => l.id === lineId);
+	if (!line?.auction) return { ok: false, message: "진행 중인 경매가 없어요." };
+	const bid = topBid(line.auction);
+	if (!bid) return { ok: false, message: "아직 입찰이 없어요." };
+	settleAuction(state, line, bid, now);
+	return {
+		ok: true,
+		message: `${bid.bidder}에게 낙찰 — ${Math.floor(bid.amount).toLocaleString("ko-KR")}원`,
+	};
+}
+
+/** 유일본 경매를 접고 원가 일부를 회수한다. */
+export function cancelAuction(state: GameState, lineId: string): GoodsResult {
+	const line = state.goods.find((l) => l.id === lineId);
+	if (!line?.auction) return { ok: false, message: "진행 중인 경매가 없어요." };
+	const back = auctionSalvage(line.auction);
+	line.auction = null;
+	state.money += back;
+	return { ok: true, message: `경매를 접고 ${back.toLocaleString("ko-KR")}원 회수` };
+}
+
+/** 낙찰 처리. 칭호는 여기서 준다. */
+function settleAuction(state: GameState, line: GoodsLine, bid: GoodsBid, now: number): void {
+	const character = state.characters[line.characterId];
+	state.money += bid.amount;
+	state.totalEarned += bid.amount;
+	line.revenue += bid.amount;
+	line.soldOut += 1;
+	line.auction = null;
+	pushLog(
+		state,
+		`👑 ${character?.name ?? "굿즈"} 유일본이 ${bid.bidder}에게 ${Math.floor(bid.amount).toLocaleString("ko-KR")}원에 낙찰됐습니다!`,
+		"good",
+	);
+	awardTitle(state, "unique");
+	checkSoldOutTitle(state, now);
+}
+
+/** 한 시즌에 완판을 많이 하면 주는 칭호 */
+function checkSoldOutTitle(state: GameState, _now: number): void {
+	const total = state.goods.reduce((sum, l) => sum + l.soldOut, 0);
+	if (total >= 20) awardTitle(state, "soldout");
+}
+
+/**
+ * 유일본 경매를 시계에 맞춰 진행한다. 페이지를 닫아둬도 흐른 시간만큼
+ * 입찰이 공개되고, 끝난 경매는 그 자리에서 정산된다.
+ */
+export function tickGoodsAuctions(state: GameState, now = Date.now()): void {
+	for (const line of state.goods) {
+		const auction = line.auction;
+		if (!auction) continue;
+
+		const elapsed = (now - auction.startedAt) / 1000;
+		while (auction.revealed < auction.schedule.length) {
+			const next = auction.schedule[auction.revealed];
+			if (!next || next.at > elapsed) break;
+			auction.revealed += 1;
+			const character = state.characters[line.characterId];
+			pushLog(
+				state,
+				`${next.bidder}이(가) ${character?.name ?? "유일본"}에 ${Math.floor(next.amount).toLocaleString("ko-KR")}원을 불렀습니다.`,
+				"market",
+			);
+		}
+
+		if (now < auction.endsAt) continue;
+
+		const bid = topBid(auction);
+		if (bid) {
+			settleAuction(state, line, bid, now);
+		} else {
+			const back = auctionSalvage(auction);
+			line.auction = null;
+			state.money += back;
+			const character = state.characters[line.characterId];
+			pushLog(
+				state,
+				`${character?.name ?? "유일본"} 유일본이 유찰됐습니다. 시작가가 높았어요. (${back.toLocaleString("ko-KR")}원 회수)`,
+				"bad",
+			);
+		}
+	}
+}
+
 /** 팔던 한정판을 접고 남은 재고를 떨이로 넘긴다. */
 export function scrapEdition(state: GameState, lineId: string): GoodsResult {
 	const line = state.goods.find((l) => l.id === lineId);
@@ -360,7 +555,7 @@ export function closeGoods(state: GameState, lineId: string): GoodsResult {
 	const index = state.goods.findIndex((l) => l.id === lineId);
 	if (index < 0) return { ok: false, message: "없는 굿즈예요." };
 	const [line] = state.goods.splice(index, 1);
-	if (line) state.money += salvageValue(line);
+	if (line) state.money += salvageValue(line) + (line.auction ? auctionSalvage(line.auction) : 0);
 	const character = line ? state.characters[line.characterId] : undefined;
 	return { ok: true, message: `${character?.name ?? "굿즈"} 판매를 종료했어요.` };
 }
@@ -386,6 +581,8 @@ export function tickGoods(state: GameState, dt: number): number {
 			if (edition.stock <= 0) {
 				edition.stock = 0;
 				line.soldOut += 1;
+				if (kitOf(edition.grade).title === "한정판") awardTitle(state, "limited");
+				checkSoldOutTitle(state, Date.now());
 				const character = state.characters[line.characterId];
 				const buyer = RIVAL_NAMES[(line.soldOut + line.editions) % RIVAL_NAMES.length];
 				pushLog(

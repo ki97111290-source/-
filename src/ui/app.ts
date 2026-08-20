@@ -13,6 +13,9 @@ import {
 	KITS,
 	type KitDef,
 	PRICE_STEPS,
+	acceptTopBid,
+	auctionSeconds,
+	cancelAuction,
 	closeGoods,
 	editionSeconds,
 	fairPrice,
@@ -300,15 +303,31 @@ function snapshotKit(state: GameState, lineId: string, factor: number): KitSheet
 			const fair = fairPrice(power, type, kit);
 			// 비싸게 낼수록 덜 팔린다. 총액은 늘지만 완판까지 오래 걸린다.
 			const demand = (kit.units / editionSeconds(type, kit)) * factor ** -BALANCE.goodsElasticity;
-			return {
+			const common = {
 				id: kit.id,
 				name: kit.name,
 				icon: kit.icon,
 				units: kit.units.toLocaleString("ko-KR"),
+				title: kit.title,
 				locked: !kitUnlocked(state, kit),
 				lockLabel: `시즌 팬심 ${fmt(kit.fansNeeded)} 필요`,
 				cost: won(cost),
 				affordable: state.money >= cost,
+			};
+			// 유일본은 흘려 파는 게 아니라 경매다. 시작가와 마감 시간을 보여준다.
+			if (kit.auctioned) {
+				return {
+					...common,
+					auctioned: true,
+					price: won(fair * factor),
+					revenue: "경매",
+					lasts: duration(auctionSeconds(type, kit)),
+					total: won(fair * factor),
+				};
+			}
+			return {
+				...common,
+				auctioned: false,
 				price: won(fair * factor),
 				revenue: rate(demand * fair * factor),
 				lasts: duration(kit.units / demand),
@@ -453,6 +472,18 @@ function onClick(event: MouseEvent, engine: Engine): void {
 			const res = printEdition(state, id, grade, ui.kitSheet?.factor ?? 1);
 			toast(res.message, res.ok ? "good" : "bad");
 			if (res.ok) closeModals();
+			break;
+		}
+
+		case "accept-bid": {
+			const res = acceptTopBid(state, id);
+			toast(res.message, res.ok ? "good" : "bad");
+			break;
+		}
+
+		case "cancel-auction": {
+			const res = cancelAuction(state, id);
+			toast(res.message, res.ok ? "info" : "bad");
 			break;
 		}
 

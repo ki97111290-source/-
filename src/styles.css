@@ -884,6 +884,95 @@ button:focus-visible {
 	font-size: 13px;
 }
 
+.badge {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--trait-bg);
+	border: 1px solid var(--trait-line);
+	color: var(--trait-text);
+	white-space: nowrap;
+}
+
+.badge--uniq {
+	background: color-mix(in srgb, var(--gold) 18%, transparent);
+	border-color: color-mix(in srgb, var(--gold) 55%, transparent);
+	color: var(--gold);
+}
+
+/* ---------- 유일본 경매 ---------- */
+
+.uniq {
+	display: grid;
+	gap: 6px;
+	padding: 10px;
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--gold) 8%, var(--panel));
+	border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+}
+
+.uniq__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.uniq__price {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.uniq__price b {
+	font-size: 20px;
+	color: var(--gold);
+	font-variant-numeric: tabular-nums;
+}
+
+.bid--top {
+	border: 1px solid color-mix(in srgb, var(--gold) 50%, transparent);
+	color: var(--gold);
+}
+
+/* ---------- 칭호 ---------- */
+
+.titles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 6px;
+}
+
+.titlecard {
+	display: grid;
+	justify-items: center;
+	text-align: center;
+	gap: 2px;
+	padding: 10px 8px;
+	border-radius: 12px;
+	background: var(--panel);
+	border: 1px dashed var(--line);
+	opacity: 0.5;
+}
+
+.titlecard--on {
+	opacity: 1;
+	border-style: solid;
+	border-color: color-mix(in srgb, var(--gold) 45%, var(--line));
+	background: color-mix(in srgb, var(--gold) 8%, var(--panel));
+}
+
+.titlecard--on b {
+	color: var(--gold);
+}
+
+.titlecard__icon {
+	font-size: 26px;
+}
+
 .gtype--locked {
 	opacity: 0.55;
 	border-style: dashed;

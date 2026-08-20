@@ -4,6 +4,8 @@ import { BALANCE } from "../../game/balance";
 import { ownedCharacters } from "../../game/characters";
 import {
 	KITS,
+	auctionSalvage,
+	auctionSecondsLeft,
 	baseRevenue,
 	editionRevenue,
 	goodsMultiplier,
@@ -14,6 +16,7 @@ import {
 	lineOf,
 	salvageValue,
 	secondsLeft,
+	topBid,
 } from "../../game/goods";
 import { html, raw } from "../dom";
 
@@ -60,8 +63,8 @@ function kitRack(state: GameState): string {
 			<div class="kit ${on ? "kit--on" : ""}">
 				<span class="kit__icon">${kit.icon}</span>
 				<span class="kit__name">${kit.name}</span>
-				<span class="muted small">${kit.units.toLocaleString("ko-KR")}개 한정</span>
-				<span class="muted small">${on ? "해금됨" : `팬심 ${fmt(kit.fansNeeded)}`}</span>
+				<span class="muted small">${kit.units === 1 ? "단 1개 · 경매" : `${kit.units.toLocaleString("ko-KR")}개 한정`}</span>
+				<span class="muted small">${on ? (kit.title ? `칭호 ${kit.title}` : "해금됨") : `팬심 ${fmt(kit.fansNeeded)}`}</span>
 			</div>`;
 	}).join("");
 	return html`
@@ -76,6 +79,7 @@ function lineCard(state: GameState, line: GoodsLine): string {
 	const def = goodsType(line.type);
 	const seated = state.slots.includes(line.characterId);
 	const edition = line.edition;
+	const auction = line.auction;
 
 	return html`
 		<article class="card goods" style="--accent:${character.color}">
@@ -88,7 +92,13 @@ function lineCard(state: GameState, line: GoodsLine): string {
 					<span>인기도 <b>🔥 ${fmt(character.popularity)}</b></span>
 					${raw(line.soldOut > 0 ? html`<span>완판 <b>${line.soldOut}회</b></span>` : "")}
 				</div>
-				${raw(edition ? editionBar(line) : '<p class="muted small">한정판을 찍으면 매출이 크게 뜁니다.</p>')}
+				${raw(
+					auction
+						? auctionBox(state, line)
+						: edition
+							? editionBar(line)
+							: '<p class="muted small">한정판을 찍으면 매출이 크게 뜁니다.</p>',
+				)}
 				${raw(
 					seated
 						? ""
@@ -96,16 +106,20 @@ function lineCard(state: GameState, line: GoodsLine): string {
 				)}
 			</div>
 			<div class="card__actions">
-				<button class="btn btn--primary btn--sm" data-action="open-kit" data-id="${line.id}">
-					${edition && edition.stock > 0 ? "다시 찍기" : "한정판 찍기"}
-				</button>
 				${raw(
-					edition && edition.stock > 0
-						? html`<button class="btn btn--ghost btn--sm" data-action="scrap" data-id="${line.id}">떨이 정리 ${won(salvageValue(line))}</button>`
-						: "",
+					auction
+						? auctionActions(line)
+						: html`<button class="btn btn--primary btn--sm" data-action="open-kit" data-id="${line.id}">
+								${edition && edition.stock > 0 ? "다시 찍기" : "한정판 찍기"}
+							</button>
+							${
+								edition && edition.stock > 0
+									? html`<button class="btn btn--ghost btn--sm" data-action="scrap" data-id="${line.id}">떨이 정리 ${won(salvageValue(line))}</button>`
+									: ""
+							}
+							<button class="btn btn--ghost btn--sm" data-action="open-goods" data-id="${line.characterId}">종류 바꾸기</button>
+							<button class="btn btn--ghost btn--sm danger" data-action="close-goods-line" data-id="${line.id}">판매 종료</button>`,
 				)}
-				<button class="btn btn--ghost btn--sm" data-action="open-goods" data-id="${line.characterId}">종류 바꾸기</button>
-				<button class="btn btn--ghost btn--sm danger" data-action="close-goods-line" data-id="${line.id}">판매 종료</button>
 			</div>
 		</article>
 	`;
@@ -130,5 +144,56 @@ function editionBar(line: GoodsLine): string {
 			<div class="edition__bar"><i style="width:${(left * 100).toFixed(1)}%"></i></div>
 			<span class="muted small">한정판 매출 ${rate(editionRevenue(line))} · 완판까지 약 ${duration(secondsLeft(line))}</span>
 		</div>
+	`;
+}
+
+/** 유일본 경매판 */
+function auctionBox(state: GameState, line: GoodsLine): string {
+	const auction = line.auction;
+	if (!auction) return "";
+	const character = state.characters[line.characterId];
+	const bid = topBid(auction);
+	const left = auctionSecondsLeft(auction);
+	const bids = auction.schedule
+		.slice(0, auction.revealed)
+		.reverse()
+		.slice(0, 4)
+		.map(
+			(b, i) => html`<li class="bid ${i === 0 ? "bid--top" : ""}">
+				<span>${b.bidder}</span><b>${won(b.amount)}</b>
+			</li>`,
+		)
+		.join("");
+
+	return html`
+		<div class="uniq">
+			<div class="uniq__head">
+				<span class="badge badge--uniq">👑 유일본</span>
+				<span class="muted small">${character?.name ?? ""} · 단 1개</span>
+			</div>
+			<div class="uniq__price">
+				<b>${bid ? won(bid.amount) : won(auction.startPrice)}</b>
+				<span class="muted small">${bid ? `${bid.bidder} 최고가` : "아직 입찰 없음 · 시작가"}</span>
+			</div>
+			<span class="muted small">${left > 0 ? `${duration(left)} 남음` : "마감 정산 중"}</span>
+			${raw(bids ? html`<ul class="bids">${raw(bids)}</ul>` : "")}
+			${raw(
+				bid
+					? ""
+					: html`<p class="muted small">시작가가 높으면 아무도 못 부르고 유찰됩니다. 유찰되면 ${won(auctionSalvage(auction))}만 돌아와요.</p>`,
+			)}
+		</div>
+	`;
+}
+
+function auctionActions(line: GoodsLine): string {
+	const auction = line.auction;
+	if (!auction) return "";
+	const bid = topBid(auction);
+	return html`
+		<button class="btn btn--primary btn--sm" data-action="accept-bid" data-id="${line.id}" ${bid ? "" : "disabled"}>
+			${bid ? `지금 낙찰 ${won(bid.amount)}` : "입찰 대기 중"}
+		</button>
+		<button class="btn btn--ghost btn--sm danger" data-action="cancel-auction" data-id="${line.id}">경매 접기 ${won(auctionSalvage(auction))}</button>
 	`;
 }
