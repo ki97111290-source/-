@@ -14,6 +14,7 @@ import {
 import { isRare, traitOf } from "../../game/traits";
 import { html, raw, sparkline } from "../dom";
 import { hint, stats } from "../parts";
+import { watchOnly } from "../prefs";
 import { ui } from "../uiState";
 
 export function renderMarket(state: GameState): string {
@@ -28,11 +29,16 @@ export function renderMarket(state: GameState): string {
 
 	// 보유 중 → 응원 중 → 나머지 순. 스물여섯 줄을 스크롤해서 내 종목을 찾게 두지 않는다.
 	const rank = (c: Character) =>
-		(state.portfolio[c.id]?.shares ?? 0) > 0 ? 0 : state.slots.includes(c.id) ? 1 : 2;
-	const rows = Object.values(state.characters)
-		.sort((a, b) => rank(a) - rank(b) || b.popularity - a.popularity)
-		.map((c) => row(state, c))
-		.join("");
+		watched(state, c) ? ((state.portfolio[c.id]?.shares ?? 0) > 0 ? 0 : 1) : 2;
+	const all = Object.values(state.characters).sort(
+		(a, b) => rank(a) - rank(b) || b.popularity - a.popularity,
+	);
+
+	// 관심 종목이 하나도 없거나 전부 관심 종목이면 걸러낼 것이 없다 — 버튼도 안 그린다.
+	const mine = all.filter((c) => watched(state, c));
+	const filterable = mine.length > 0 && mine.length < all.length;
+	const only = filterable && watchOnly();
+	const rows = (only ? mine : all).map((c) => row(state, c)).join("");
 
 	return html`
 		<section class="panel">
@@ -60,9 +66,24 @@ export function renderMarket(state: GameState): string {
 				<b>응원석에 앉힌 캐릭터만 ▲ 상승</b>합니다.
 				(수수료 ${(tradeFee(state) * 100).toFixed(2)}%, ${BALANCE.dividendPeriod}초마다 배당)`),
 			)}
+			${raw(
+				filterable
+					? html`<div class="listbar">
+							<span class="muted small">${only ? `관심 ${mine.length}종` : `전체 ${all.length}종`}</span>
+							<button class="btn btn--sm btn--ghost" type="button" data-action="watch-only">
+								${only ? `전체 ${all.length}종 보기` : `관심 ${mine.length}종만 보기`}
+							</button>
+						</div>`
+					: "",
+			)}
 			<div class="rows">${raw(rows)}</div>
 		</section>
 	`;
+}
+
+/** 보유 중이거나 응원석에 앉혀 둔 종목. 내가 실제로 지켜보는 것들이다. */
+function watched(state: GameState, c: Character): boolean {
+	return (state.portfolio[c.id]?.shares ?? 0) > 0 || state.slots.includes(c.id);
 }
 
 function row(state: GameState, c: Character): string {

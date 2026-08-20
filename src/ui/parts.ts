@@ -1,5 +1,5 @@
 import { html, raw } from "./dom";
-import { hintsOn } from "./hints";
+import { hintsOn } from "./prefs";
 
 /**
  * 화면마다 반복되는 조각들.

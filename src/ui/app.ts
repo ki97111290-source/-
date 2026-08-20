@@ -34,7 +34,7 @@ import {
 import { buyShares, sellShares } from "../game/market";
 import { clearSave, exportSave, importSave, saveGame } from "../game/save";
 import { html, paint } from "./dom";
-import { hintsOn, toggleHints } from "./hints";
+import { hintsOn, toggleHints, toggleWatchOnly } from "./prefs";
 import { effectiveTheme, toggleTheme } from "./theme";
 import {
 	type GoodsSheet,
@@ -398,6 +398,10 @@ function onClick(event: MouseEvent, engine: Engine): void {
 
 		case "hints":
 			toast(toggleHints() ? "설명을 다시 켰어요" : "설명을 숨겼어요");
+			break;
+
+		case "watch-only":
+			toast(toggleWatchOnly() ? "관심 종목만 봅니다" : "전체 종목을 봅니다");
 			break;
 
 		case "seat": {

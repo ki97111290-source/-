@@ -1230,6 +1230,15 @@ button:focus-visible {
 	gap: 8px;
 }
 
+/* 목록 위에 붙는 줄. 지금 몇 개를 보고 있는지와 접었다 펴는 버튼만 둔다. */
+.listbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	min-width: 0;
+}
+
 .row {
 	display: grid;
 	grid-template-columns: auto 1fr auto;
