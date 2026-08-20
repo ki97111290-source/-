@@ -35,7 +35,19 @@ export interface Character {
 	createdAt: number;
 }
 
-export type GoodsTypeId = "keyring" | "acrylic" | "photobook" | "plush";
+/**
+ * 플레이어가 만든 굿즈 디자인. 이름과 사진은 자유이고, 판매 성향(burst)만
+ * 수치를 갖는다. 이름에서 수치가 나오면 이름으로 스탯을 파밍하게 되므로
+ * 정체성과 밸런스를 갈라놓았다.
+ */
+export interface GoodsDesign {
+	/** 플레이어가 붙인 이름 */
+	name: string;
+	/** 굿즈 사진(data URI). 없으면 캐릭터 아바타를 쓴다 */
+	image: string | null;
+	/** 0 = 오래 팔린다 … 1 = 폭발적으로 팔린다 */
+	burst: number;
+}
 
 /** 굿즈 제작 키트 등급. 높을수록 적게 찍고 비싸게 팔린다. */
 export type KitGrade = "bronze" | "silver" | "gold" | "limited" | "unique";
@@ -93,7 +105,8 @@ export interface GoodsEdition {
 export interface GoodsLine {
 	id: string;
 	characterId: string;
-	type: GoodsTypeId;
+	/** 이 라인이 파는 굿즈의 이름·사진·판매 성향 */
+	design: GoodsDesign;
 	createdAt: number;
 	/** 지금까지 찍어낸 한정판 수 */
 	editions: number;
@@ -174,6 +187,8 @@ export interface MetaState {
 	bestFans: number;
 	/** 획득한 칭호 id. 시즌이 바뀌어도 남는다. */
 	titles: string[];
+	/** 만들어 둔 굿즈 디자인 보관함. 시즌이 바뀌어도 남는다. */
+	goodsDesigns: GoodsDesign[];
 }
 
 export interface LogEntry {

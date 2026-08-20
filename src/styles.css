@@ -1015,6 +1015,38 @@ button:focus-visible {
 	font-weight: 700;
 }
 
+.bursts {
+	display: grid;
+	gap: 6px;
+}
+
+.burst {
+	display: grid;
+	gap: 1px;
+	text-align: left;
+	padding: 8px 12px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--panel);
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+
+.burst b {
+	font-size: 13px;
+}
+
+.burst--on {
+	border-color: var(--accent);
+	background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+}
+
+.savedrow {
+	display: grid;
+	gap: 4px;
+}
+
 .gtypes {
 	display: grid;
 	gap: 8px;

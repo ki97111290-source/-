@@ -19,6 +19,13 @@ export const BALANCE = {
 	popularitySoftcap: 0.06,
 	/** 한정판이 없을 때도 상시로 팔리는 비율. 방치해도 이만큼은 계속 들어온다. */
 	goodsBaseShare: 0.7,
+	/** 판매 성향 곡선의 양 끝 (burst 0 → min, burst 1 → max) */
+	goodsRevenueMin: 0.8,
+	goodsRevenueMax: 2.2,
+	goodsPaceMin: 0.6,
+	goodsPaceMax: 2.2,
+	/** 굿즈 디자인 보관함 상한 (저장 용량 보호) */
+	maxGoodsDesigns: 12,
 	/** 한정판을 완판하면 키트값의 몇 배가 되는가 (적정가 기준) */
 	goodsMarkup: 2.5,
 	/** 가격 탄력성. 값을 올릴수록 비싸게 팔 때 더 안 팔린다. */

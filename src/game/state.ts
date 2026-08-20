@@ -103,7 +103,11 @@ export function createNewGame(
 		`시드머니 ${BALANCE.seedMoney.toLocaleString("ko-KR")}원으로 시작합니다. 켜두기만 하면 응원이 알아서 돌아가요.`,
 		"good",
 	);
-	pushLog(state, "첫 굿즈(키링)가 발매됐습니다. 돈은 ‘굿즈’ 탭에서 들어와요.", "market");
+	pushLog(
+		state,
+		`첫 굿즈 ‘${state.goods[0]?.design.name ?? "응원 키링"}’ 판매를 시작했어요. 돈은 ‘굿즈’ 탭에서 들어옵니다.`,
+		"market",
+	);
 	if (meta.roster.length > 0) {
 		pushLog(state, `보관함의 캐릭터 ${meta.roster.length}명이 다시 데뷔했습니다.`, "info");
 	} else {
@@ -120,10 +124,12 @@ export function openStarterLine(state: GameState, now: number = Date.now()): voi
 	if (state.goods.length > 0) return;
 	const first = state.slots.find((id): id is string => Boolean(id)) ?? state.owned[0];
 	if (!first) return;
+	// 지난 시즌에 만들어 둔 디자인이 있으면 그대로 다시 쓴다.
+	const saved = state.meta.goodsDesigns[0];
 	state.goods.push({
 		id: uid("gd"),
 		characterId: first,
-		type: "keyring",
+		design: saved ?? { name: "응원 키링", image: null, burst: 0 },
 		createdAt: now,
 		editions: 0,
 		soldOut: 0,

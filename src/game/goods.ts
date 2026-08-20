@@ -4,8 +4,8 @@ import type {
 	GameState,
 	GoodsAuction,
 	GoodsBid,
+	GoodsDesign,
 	GoodsLine,
-	GoodsTypeId,
 	KitGrade,
 } from "../core/types";
 import { BALANCE } from "./balance";
@@ -15,55 +15,53 @@ import { pushLog, upgradeLevel } from "./state";
 import { awardTitle } from "./titles";
 import { traitOf } from "./traits";
 
-export interface GoodsType {
-	id: GoodsTypeId;
-	name: string;
-	icon: string;
-	/** 한정판 매출 배수 */
-	revenue: number;
-	/** 팔려나가는 속도. 클수록 빨리 소진된다. */
-	pace: number;
-	desc: string;
+/**
+ * 굿즈의 판매 성향. 하나의 곡선 위를 0~1로 오간다.
+ *   burst 0 → 천천히 오래 팔린다 (자주 못 들여다보는 사람에게 유리)
+ *   burst 1 → 폭발적으로 팔리고 금방 끝난다 (자주 챙길수록 유리)
+ * 이름과 사진은 자유롭게 짓되, 수치는 여기서만 나온다.
+ * (이름에서 수치가 나오면 이름으로 스탯을 파밍하게 된다)
+ */
+export const BURST_STEPS: readonly { value: number; label: string; desc: string }[] = [
+	{ value: 0, label: "은은한", desc: "천천히 아주 오래 팔린다. 방치할수록 유리" },
+	{ value: 0.25, label: "잔잔한", desc: "느긋하게 오래 간다" },
+	{ value: 0.5, label: "무난한", desc: "적당히 팔리고 적당히 간다" },
+	{ value: 0.75, label: "화제의", desc: "빠르게 팔린다. 자주 들여다볼수록 좋다" },
+	{ value: 1, label: "폭발적인", desc: "순식간에 나간다. 자주 다시 찍어야 한다" },
+] as const;
+
+function lerpPow(min: number, max: number, burst: number): number {
+	const b = Math.max(0, Math.min(1, burst));
+	return min * (max / min) ** b;
 }
 
-/**
- * 굿즈 종류는 "시간당 매출"과 "한 판이 얼마나 오래 가는가"를 맞바꾼다.
- * 자주 못 들여다보는 사람은 키링을, 자주 챙길 사람은 인형을 고르면 된다.
- */
-export const GOODS_TYPES: readonly GoodsType[] = [
-	{
-		id: "keyring",
-		name: "키링",
-		icon: "🔑",
-		revenue: 0.8,
-		pace: 0.6,
-		desc: "한 판이 오래 간다. 방치할수록 유리",
-	},
-	{
-		id: "acrylic",
-		name: "아크릴 스탠드",
-		icon: "🧊",
-		revenue: 1.2,
-		pace: 1,
-		desc: "무난한 기본형",
-	},
-	{
-		id: "photobook",
-		name: "화보집",
-		icon: "📖",
-		revenue: 1.6,
-		pace: 1.5,
-		desc: "매출이 크지만 금방 빠진다",
-	},
-	{
-		id: "plush",
-		name: "인형",
-		icon: "🧸",
-		revenue: 2.2,
-		pace: 2.2,
-		desc: "폭발적. 자주 다시 찍어야 한다",
-	},
-] as const;
+/** 판매 성향이 정하는 매출 배수 */
+export function revenueOf(burst: number): number {
+	return lerpPow(BALANCE.goodsRevenueMin, BALANCE.goodsRevenueMax, burst);
+}
+
+/** 판매 성향이 정하는 판매 속도. 클수록 빨리 소진된다. */
+export function paceOf(burst: number): number {
+	return lerpPow(BALANCE.goodsPaceMin, BALANCE.goodsPaceMax, burst);
+}
+
+export function burstLabel(burst: number): string {
+	let best = BURST_STEPS[0] as { value: number; label: string };
+	for (const step of BURST_STEPS) {
+		if (Math.abs(step.value - burst) < Math.abs(best.value - burst)) best = step;
+	}
+	return best.label;
+}
+
+/** 굿즈 이름은 비워둘 수 없다. 길이도 제한한다. */
+export function cleanDesign(design: GoodsDesign): GoodsDesign {
+	const name = design.name.trim().slice(0, 16) || "이름 없는 굿즈";
+	return {
+		name,
+		image: design.image ?? null,
+		burst: Math.max(0, Math.min(1, Number.isFinite(design.burst) ? design.burst : 0.5)),
+	};
+}
 
 export interface KitDef {
 	id: KitGrade;
@@ -150,10 +148,6 @@ export const PRICE_STEPS: readonly { factor: number; label: string }[] = [
 	{ factor: 2.5, label: "프리미엄" },
 ] as const;
 
-export function goodsType(id: GoodsTypeId): GoodsType {
-	return GOODS_TYPES.find((t) => t.id === id) ?? (GOODS_TYPES[1] as GoodsType);
-}
-
 export function kitOf(id: KitGrade): KitDef {
 	return KITS.find((k) => k.id === id) ?? (KITS[0] as KitDef);
 }
@@ -217,18 +211,18 @@ export function openCost(state: GameState, character: Character): number {
 }
 
 /** 한정판 한 판이 팔려나가는 데 걸리는 시간(초). 적정가 기준. */
-export function editionSeconds(type: GoodsType, kit: KitDef): number {
-	return (kit.hours * 3600) / type.pace;
+export function editionSeconds(burst: number, kit: KitDef): number {
+	return (kit.hours * 3600) / paceOf(burst);
 }
 
 /** 적정가로 완판했을 때의 총 매출 */
-export function editionTotal(power: number, type: GoodsType, kit: KitDef): number {
-	return power * type.revenue * kit.power * editionSeconds(type, kit);
+export function editionTotal(power: number, burst: number, kit: KitDef): number {
+	return power * revenueOf(burst) * kit.power * editionSeconds(burst, kit);
 }
 
 /** 개당 적정가 */
-export function fairPrice(power: number, type: GoodsType, kit: KitDef): number {
-	return editionTotal(power, type, kit) / kit.units;
+export function fairPrice(power: number, burst: number, kit: KitDef): number {
+	return editionTotal(power, burst, kit) / kit.units;
 }
 
 /** 키트 값. 완판하면 이 값의 goodsMarkup 배가 돌아온다. */
@@ -239,7 +233,7 @@ export function kitCost(
 	kit: KitDef,
 ): number {
 	const power = salesPower(state, character);
-	return Math.ceil(editionTotal(power, goodsType(line.type), kit) / BALANCE.goodsMarkup);
+	return Math.ceil(editionTotal(power, line.design.burst, kit) / BALANCE.goodsMarkup);
 }
 
 /**
@@ -261,8 +255,8 @@ export function secondsLeft(line: GoodsLine): number {
 }
 
 /** 유일본 경매가 도는 시간(초). 한정판이 다 팔려나가는 시간과 같은 기준을 쓴다. */
-export function auctionSeconds(type: GoodsType, kit: KitDef): number {
-	return editionSeconds(type, kit);
+export function auctionSeconds(burst: number, kit: KitDef): number {
+	return editionSeconds(burst, kit);
 }
 
 /** 지금까지 나온 최고 입찰 */
@@ -315,22 +309,21 @@ export interface GoodsResult {
 
 /**
  * 굿즈 라인을 연다. 캐릭터 한 명당 하나뿐이라,
- * 이미 내고 있는 캐릭터에게 다른 종류를 내면 그 자리에서 갈아탄다.
+ * 이미 내고 있는 캐릭터에게 새 디자인을 내면 그 자리에서 갈아탄다.
+ * 이름과 사진은 플레이어가 자유롭게 정한다.
  */
 export function releaseGoods(
 	state: GameState,
 	characterId: string,
-	type: GoodsTypeId,
+	rawDesign: GoodsDesign,
 	now = Date.now(),
 ): GoodsResult {
 	const character = state.characters[characterId];
 	if (!character || !state.owned.includes(characterId)) {
 		return { ok: false, message: "내가 가진 캐릭터가 아니에요." };
 	}
+	const design = cleanDesign(rawDesign);
 	const existing = lineOf(state, characterId);
-	if (existing?.type === type) {
-		return { ok: false, message: "이미 같은 굿즈를 내고 있어요." };
-	}
 	if (!existing && state.goods.length >= BALANCE.maxGoodsLines) {
 		return { ok: false, message: `굿즈 라인은 ${BALANCE.maxGoodsLines}개까지 열 수 있어요.` };
 	}
@@ -338,21 +331,23 @@ export function releaseGoods(
 	if (state.money < cost) return { ok: false, message: "개설비가 부족해요." };
 
 	state.money -= cost;
-	const def = goodsType(type);
+	rememberDesign(state, design);
+
 	if (existing) {
-		// 종류를 바꾸면 팔던 재고는 떨이로 정리한다.
-		const salvage = salvageValue(existing);
-		if (salvage > 0) state.money += salvage;
-		existing.type = type;
+		// 디자인을 바꾸면 팔던 재고와 경매는 정리한다.
+		const back = salvageValue(existing) + (existing.auction ? auctionSalvage(existing.auction) : 0);
+		if (back > 0) state.money += back;
+		existing.design = design;
 		existing.edition = null;
-		pushLog(state, `${character.name}의 굿즈를 ${def.name}(으)로 바꿨어요.`, "info");
-		return { ok: true, message: `${character.name} ${def.name}(으)로 교체` };
+		existing.auction = null;
+		pushLog(state, `${character.name}의 굿즈를 ‘${design.name}’(으)로 바꿨어요.`, "info");
+		return { ok: true, message: `‘${design.name}’(으)로 교체` };
 	}
 
 	state.goods.push({
 		id: uid("gd"),
 		characterId,
-		type,
+		design,
 		createdAt: now,
 		editions: 0,
 		soldOut: 0,
@@ -360,8 +355,17 @@ export function releaseGoods(
 		auction: null,
 		revenue: 0,
 	});
-	pushLog(state, `${character.name} ${def.name} 판매를 시작했습니다. ${def.icon}`, "good");
-	return { ok: true, message: `${character.name} ${def.name} 개설` };
+	pushLog(state, `${character.name}의 ‘${design.name}’ 판매를 시작했습니다.`, "good");
+	return { ok: true, message: `‘${design.name}’ 판매 시작` };
+}
+
+/** 만든 디자인을 보관함에 넣어 다음 시즌에도 쓸 수 있게 한다. */
+export function rememberDesign(state: GameState, design: GoodsDesign): void {
+	const shelf = state.meta.goodsDesigns;
+	const index = shelf.findIndex((d) => d.name === design.name);
+	if (index >= 0) shelf.splice(index, 1);
+	shelf.unshift(design);
+	if (shelf.length > BALANCE.maxGoodsDesigns) shelf.length = BALANCE.maxGoodsDesigns;
 }
 
 /**
@@ -390,9 +394,9 @@ export function printEdition(
 	const cost = kitCost(state, character, line, kit);
 	if (state.money < cost) return { ok: false, message: `${kit.name} 값이 부족해요.` };
 
-	const type = goodsType(line.type);
+	const burst = line.design.burst;
 	const power = salesPower(state, character);
-	const fair = fairPrice(power, type, kit);
+	const fair = fairPrice(power, burst, kit);
 	if (!(fair > 0)) return { ok: false, message: "아직 팔릴 만한 인기가 아니에요." };
 
 	// 남은 재고는 떨이로 넘기고 새 판을 찍는다.
@@ -402,7 +406,7 @@ export function printEdition(
 
 	// 유일본은 1개뿐이라 흘려 팔 수 없다. 경매에 올리고 수집가를 기다린다.
 	if (kit.auctioned) {
-		const seconds = auctionSeconds(type, kit);
+		const seconds = auctionSeconds(burst, kit);
 		const startPrice = Math.ceil(fair * priceFactor);
 		line.edition = null;
 		line.auction = {
@@ -417,7 +421,7 @@ export function printEdition(
 		line.editions += 1;
 		pushLog(
 			state,
-			`${kit.icon} ${character.name} ${type.name} 유일본 경매 시작! 시작가 ${Math.floor(startPrice).toLocaleString("ko-KR")}원`,
+			`${kit.icon} ${character.name} ‘${line.design.name}’ 유일본 경매 시작! 시작가 ${Math.floor(startPrice).toLocaleString("ko-KR")}원`,
 			"market",
 		);
 		return {
@@ -427,7 +431,7 @@ export function printEdition(
 	}
 
 	// 비싸게 내놓을수록 덜 팔린다. 총액은 늘지만 시간이 오래 걸린다.
-	const baseDemand = kit.units / editionSeconds(type, kit);
+	const baseDemand = kit.units / editionSeconds(burst, kit);
 	line.edition = {
 		grade,
 		total: kit.units,
@@ -441,7 +445,7 @@ export function printEdition(
 
 	pushLog(
 		state,
-		`${kit.icon} ${character.name} ${type.name} ${kit.units.toLocaleString("ko-KR")}개 한정 발매!`,
+		`${kit.icon} ${character.name} ‘${line.design.name}’ ${kit.units.toLocaleString("ko-KR")}개 한정 발매!`,
 		"market",
 	);
 	return { ok: true, message: `${kit.name} · ${kit.units.toLocaleString("ko-KR")}개 발매` };
@@ -587,7 +591,7 @@ export function tickGoods(state: GameState, dt: number): number {
 				const buyer = RIVAL_NAMES[(line.soldOut + line.editions) % RIVAL_NAMES.length];
 				pushLog(
 					state,
-					`${character?.name ?? "굿즈"} ${goodsType(line.type).name} 완판! 마지막 한 개는 ${buyer}에게 갔습니다.`,
+					`${character?.name ?? "굿즈"} ‘${line.design.name}’ 완판! 마지막 한 개는 ${buyer}에게 갔습니다.`,
 					"good",
 				);
 			}

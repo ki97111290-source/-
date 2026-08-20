@@ -71,7 +71,7 @@ function kitSheet(snap: KitSheet): string {
 function goodsSheet(snap: GoodsSheet): string {
 	if (snap.picks.length === 0) {
 		return sheet(
-			"굿즈 발매",
+			"굿즈 만들기",
 			'<p class="notice">굿즈를 낼 캐릭터가 없어요. 경매장에서 데려오거나 새로 등록해보세요.</p>',
 		);
 	}
@@ -79,45 +79,78 @@ function goodsSheet(snap: GoodsSheet): string {
 	const picks = snap.picks
 		.map(
 			(c) => html`
-			<button class="chip ${c.id === snap.selectedId ? "chip--on" : ""}" data-action="goods-pick" data-id="${c.id}">
+			<button type="button" class="chip ${c.id === snap.selectedId ? "chip--on" : ""}"
+				data-action="goods-pick" data-id="${c.id}">
 				<img class="ava" src="${c.avatar}" alt="" />
 				<span>${c.name}</span>
-				<span class="muted small">${c.typeIcon}</span>
+				<span class="muted small">${c.hasLine ? "판매 중" : "＋"}</span>
 			</button>`,
 		)
 		.join("");
 
-	const types = snap.types
+	const steps = snap.steps
 		.map(
-			(type) => html`
-			<div class="gtype ${type.current ? "gtype--on" : ""}">
-				<div class="gtype__icon">${type.icon}</div>
-				<div class="gtype__body">
-					<h3>${type.name}${type.current ? " · 판매 중" : ""}</h3>
-					<p class="muted small">${type.desc}</p>
-					<div class="kv"><span>한정판 매출 <b>${type.power}</b></span><span>한 판 <b>${type.lasts}</b></span></div>
-				</div>
-				<button class="btn btn--primary btn--sm" data-action="release-goods"
-					data-id="${snap.selectedId}" data-type="${type.id}"
-					${type.current || !type.affordable ? "disabled" : ""}>
-					${type.current ? "판매 중" : type.cost}
-				</button>
-			</div>`,
+			(step) => html`
+			<button type="button" class="burst ${step.value === ui.goodsBurst ? "burst--on" : ""}"
+				data-action="goods-burst" data-value="${step.value}">
+				<b>${step.label}</b>
+				<span class="muted small">${step.desc}</span>
+				<span class="muted small">${step.preview}</span>
+			</button>`,
 		)
 		.join("");
 
+	const saved = snap.saved
+		.map(
+			(d) => html`
+			<button type="button" class="chip" data-action="goods-load" data-name="${d.name}">
+				${raw(d.image ? html`<img class="ava" src="${d.image}" alt="" />` : "<span>🏷</span>")}
+				<span>${d.name}</span>
+			</button>`,
+		)
+		.join("");
+
+	const preview = ui.goodsImage
+		? html`<img class="ava ava--lg" src="${ui.goodsImage}" alt="미리보기" />`
+		: '<div class="ava ava--lg ava--ph">🏷</div>';
+
 	return sheet(
-		snap.currentType ? "굿즈 종류 바꾸기" : "새 굿즈 라인",
+		snap.currentName ? "굿즈 바꾸기" : "굿즈 만들기",
 		html`
 			<div class="chips">${raw(picks)}</div>
-			<p class="muted small">
-				${
-					snap.currentType
-						? `${snap.selectedName}은(는) 지금 ${snap.currentType}을(를) 내고 있어요. 종류를 바꾸면 팔던 재고는 떨이로 정리됩니다.`
-						: `${snap.selectedName}의 인기도가 높을수록 매출도 개설비도 함께 올라갑니다.`
-				}
-			</p>
-			<div class="gtypes">${raw(types)}</div>
+			${raw(
+				snap.currentName
+					? html`<p class="muted small">${snap.selectedName}은(는) 지금 ‘${snap.currentName}’을(를) 팔고 있어요. 새로 만들면 팔던 재고는 떨이로 정리됩니다.</p>`
+					: html`<p class="muted small">${snap.selectedName}의 굿즈를 직접 만들어 보세요. 이름과 사진은 자유입니다.</p>`,
+			)}
+
+			<div class="upload">
+				<label class="upload__pic">
+					${raw(preview)}
+					<input type="file" id="goods-file" accept="image/*" hidden />
+					<span class="btn btn--ghost btn--sm">사진 올리기</span>
+				</label>
+				<div class="upload__fields">
+					<label>굿즈 이름
+						<input id="goods-name" type="text" maxlength="16" placeholder="예: 응원봉, 아크릴 키링, 인형"
+							autocomplete="off" value="${ui.goodsName}" />
+					</label>
+					${raw(
+						saved
+							? html`<div class="savedrow"><span class="muted small">보관함</span><div class="chips">${raw(saved)}</div></div>`
+							: "",
+					)}
+				</div>
+			</div>
+
+			<h3 class="section-title">판매 성향</h3>
+			<div class="bursts">${raw(steps)}</div>
+
+			${raw(ui.goodsError ? html`<p class="err">${ui.goodsError}</p>` : "")}
+			<p class="muted small">사진은 이 브라우저에만 저장되며 어디에도 전송되지 않아요. 만든 디자인은 보관함에 남아 다음 시즌에도 씁니다.</p>
+			<button class="btn btn--primary" data-action="create-goods" ${snap.affordable ? "" : "disabled"}>
+				${snap.currentName ? "바꾸기" : "만들기"} · 개설비 ${snap.cost}
+			</button>
 		`,
 	);
 }

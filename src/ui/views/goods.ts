@@ -7,10 +7,10 @@ import {
 	auctionSalvage,
 	auctionSecondsLeft,
 	baseRevenue,
+	burstLabel,
 	editionRevenue,
 	goodsMultiplier,
 	goodsRevenue,
-	goodsType,
 	kitOf,
 	kitUnlocked,
 	lineOf,
@@ -36,8 +36,8 @@ export function renderGoods(state: GameState): string {
 			<p class="hint">
 				이 게임에서 <b>돈이 들어오는 곳은 굿즈</b>입니다. 라인을 열어두면 상시로 조금씩 팔리고,
 				<b>키트</b>로 한정판을 찍으면 재고가 빠지는 동안 매출이 크게 뜁니다.
-				값은 내가 정하고 <b>한정 수량이 그 값을 검증</b>해요 — 비싸게 내면 천천히 오래,
-				싸게 내면 빨리 빠집니다.
+				굿즈의 <b>이름과 사진은 자유</b>예요. 판매 성향만 골라주면 됩니다 —
+				은은할수록 오래 팔리고, 폭발적일수록 빨리 나갑니다.
 			</p>
 
 			${raw(kitRack(state))}
@@ -45,7 +45,7 @@ export function renderGoods(state: GameState): string {
 			<div class="panel__head">
 				<h2 class="section-title">판매 중인 굿즈</h2>
 				<button class="btn btn--primary btn--sm" data-action="open-goods" ${full ? "disabled" : ""}>
-					${full ? "라인이 꽉 찼어요" : "＋ 새 라인"}
+					${full ? "라인이 꽉 찼어요" : "＋ 굿즈 만들기"}
 				</button>
 			</div>
 			<div class="cards">
@@ -76,16 +76,17 @@ function kitRack(state: GameState): string {
 function lineCard(state: GameState, line: GoodsLine): string {
 	const character = state.characters[line.characterId];
 	if (!character) return "";
-	const def = goodsType(line.type);
+	const design = line.design;
 	const seated = state.slots.includes(line.characterId);
 	const edition = line.edition;
 	const auction = line.auction;
 
 	return html`
 		<article class="card goods" style="--accent:${character.color}">
-			<img class="ava ava--md" src="${character.avatar}" alt="${character.name}" />
+			<img class="ava ava--md" src="${design.image ?? character.avatar}" alt="${design.name}" />
 			<div class="card__body">
-				<h3>${def.icon} ${character.name} ${def.name}</h3>
+				<h3>${design.name}</h3>
+				<p class="muted small">${character.name} · ${burstLabel(design.burst)} 굿즈</p>
 				<div class="kv">
 					<span>상시 <b>${rate(baseRevenue(state, line))}</b></span>
 					<span>누적 <b>${won(line.revenue)}</b></span>
@@ -117,7 +118,7 @@ function lineCard(state: GameState, line: GoodsLine): string {
 									? html`<button class="btn btn--ghost btn--sm" data-action="scrap" data-id="${line.id}">떨이 정리 ${won(salvageValue(line))}</button>`
 									: ""
 							}
-							<button class="btn btn--ghost btn--sm" data-action="open-goods" data-id="${line.characterId}">종류 바꾸기</button>
+							<button class="btn btn--ghost btn--sm" data-action="open-goods" data-id="${line.characterId}">굿즈 바꾸기</button>
 							<button class="btn btn--ghost btn--sm danger" data-action="close-goods-line" data-id="${line.id}">판매 종료</button>`,
 				)}
 			</div>

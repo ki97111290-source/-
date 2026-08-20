@@ -74,7 +74,7 @@ export function honorMultiplier(meta: MetaState): number {
 }
 
 export function emptyMeta(): MetaState {
-	return { trophies: [], roster: [], seasonsPlayed: 0, bestFans: 0, titles: [] };
+	return { trophies: [], roster: [], seasonsPlayed: 0, bestFans: 0, titles: [], goodsDesigns: [] };
 }
 
 export interface SeasonReport {

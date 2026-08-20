@@ -28,6 +28,7 @@ function normalizeMeta(raw: MetaState | undefined, state: GameState): MetaState 
 			: // 팬심 도입 이전 세이브는 응원 수를 그대로 옮겨 담는다
 				((raw as { bestCheers?: number }).bestCheers ?? 0);
 		meta.titles = Array.isArray(raw.titles) ? raw.titles : [];
+		meta.goodsDesigns = Array.isArray(raw.goodsDesigns) ? raw.goodsDesigns : [];
 		return meta;
 	}
 	for (const character of Object.values(state.characters ?? {})) {
@@ -118,11 +119,24 @@ export function importSave(text: string): GameState {
 }
 
 /** 오래된/손상된 세이브를 현재 버전 형태로 맞춘다. */
-/** 한정판 도입 이전 라인에는 edition이 없고 createdAt 대신 releasedAt이 있었다. */
+/** 고정 종류를 쓰던 시절의 라인. 이름·판매성향으로 옮겨 담는다. */
+const LEGACY_TYPES: Record<string, { name: string; burst: number }> = {
+	keyring: { name: "키링", burst: 0 },
+	acrylic: { name: "아크릴 스탠드", burst: 0.4 },
+	photobook: { name: "화보집", burst: 0.7 },
+	plush: { name: "인형", burst: 1 },
+};
+
+/**
+ * 한정판 도입 이전 라인에는 edition이 없고 createdAt 대신 releasedAt이 있었다.
+ * 자유 디자인 이전 라인에는 design 대신 고정 종류(type)가 있었다.
+ */
 function normalizeLine(line: GoodsLine): GoodsLine {
-	const legacy = line as GoodsLine & { releasedAt?: number };
+	const legacy = line as GoodsLine & { releasedAt?: number; type?: string };
+	const fallback = LEGACY_TYPES[legacy.type ?? ""] ?? { name: "굿즈", burst: 0.5 };
 	return {
 		...line,
+		design: line.design ?? { name: fallback.name, image: null, burst: fallback.burst },
 		createdAt: Number.isFinite(line.createdAt) ? line.createdAt : (legacy.releasedAt ?? Date.now()),
 		editions: Number.isFinite(line.editions) ? line.editions : 0,
 		soldOut: Number.isFinite(line.soldOut) ? line.soldOut : 0,

@@ -9,7 +9,7 @@ import { ownedCharacters } from "../game/characters";
 import { cheersPerSlot, incomePerSecond, slotIncome } from "../game/economy";
 import type { Engine } from "../game/engine";
 import {
-	GOODS_TYPES,
+	BURST_STEPS,
 	KITS,
 	type KitDef,
 	PRICE_STEPS,
@@ -19,7 +19,6 @@ import {
 	closeGoods,
 	editionSeconds,
 	fairPrice,
-	goodsType,
 	kitCost,
 	kitUnlocked,
 	lineOf,
@@ -27,6 +26,7 @@ import {
 	openCost,
 	printEdition,
 	releaseGoods,
+	revenueOf,
 	salesPower,
 	salvageValue,
 	scrapEdition,
@@ -206,16 +206,29 @@ function onInput(event: Event): void {
 
 async function onChange(event: Event): Promise<void> {
 	const target = event.target;
-	if (!(target instanceof HTMLInputElement) || target.id !== "upload-file") return;
+	if (!(target instanceof HTMLInputElement)) return;
 	const file = target.files?.[0];
 	if (!file) return;
+
 	// 미리보기가 바뀌면 모달을 다시 그리므로, 입력 중이던 값을 먼저 붙잡아 둔다.
-	captureUploadFields();
-	try {
-		ui.uploadAvatar = await fileToAvatar(file);
-		ui.uploadError = null;
-	} catch (err) {
-		ui.uploadError = err instanceof Error ? err.message : "이미지를 처리하지 못했어요.";
+	if (target.id === "upload-file") {
+		captureUploadFields();
+		try {
+			ui.uploadAvatar = await fileToAvatar(file);
+			ui.uploadError = null;
+		} catch (err) {
+			ui.uploadError = err instanceof Error ? err.message : "이미지를 처리하지 못했어요.";
+		}
+		return;
+	}
+	if (target.id === "goods-file") {
+		captureGoodsFields();
+		try {
+			ui.goodsImage = await fileToAvatar(file);
+			ui.goodsError = null;
+		} catch (err) {
+			ui.goodsError = err instanceof Error ? err.message : "이미지를 처리하지 못했어요.";
+		}
 	}
 }
 
@@ -234,6 +247,12 @@ function captureUploadFields(): void {
 	ui.uploadAgency = fieldValue("upload-agency");
 }
 
+/** 굿즈 시트를 다시 그리기 전에 타이핑 중이던 이름을 붙잡아 둔다. */
+function captureGoodsFields(): void {
+	if (!ui.goodsSheet) return;
+	ui.goodsName = fieldValue("goods-name");
+}
+
 function snapshotOwned(state: GameState): PickItem[] {
 	return ownedCharacters(state).map((c) => ({
 		id: c.id,
@@ -245,40 +264,35 @@ function snapshotOwned(state: GameState): PickItem[] {
 	}));
 }
 
-/** 굿즈 발매 시트에 뿌릴 스냅샷. 열 때와 캐릭터를 고를 때만 다시 만든다. */
+/** 굿즈 만들기 시트 스냅샷. 열 때와 캐릭터를 고를 때만 다시 만든다. */
 function snapshotGoods(state: GameState, characterId: string | null): GoodsSheet {
 	const owned = ownedCharacters(state);
 	const selected = owned.find((c) => c.id === characterId) ?? owned[0];
 	const current = selected ? lineOf(state, selected.id) : undefined;
+	const cost = selected ? openCost(state, selected) : 0;
+	const power = selected ? salesPower(state, selected) : 0;
+	const bronze = KITS[0] as KitDef;
 
 	return {
-		picks: owned.map((c) => {
-			const line = lineOf(state, c.id);
-			return {
-				id: c.id,
-				name: c.name,
-				avatar: c.avatar,
-				typeIcon: line ? goodsType(line.type).icon : "＋",
-			};
-		}),
+		picks: owned.map((c) => ({
+			id: c.id,
+			name: c.name,
+			avatar: c.avatar,
+			hasLine: Boolean(lineOf(state, c.id)),
+		})),
 		selectedId: selected?.id ?? "",
 		selectedName: selected?.name ?? "",
-		currentType: current ? goodsType(current.type).name : null,
-		types: GOODS_TYPES.map((type) => {
-			const cost = selected ? openCost(state, selected) : 0;
-			const bronze = KITS[0] as KitDef;
-			return {
-				id: type.id,
-				name: type.name,
-				icon: type.icon,
-				desc: type.desc,
-				power: `×${type.revenue.toFixed(1)}`,
-				lasts: duration(editionSeconds(type, bronze)),
-				cost: won(cost),
-				affordable: state.money >= cost,
-				current: current?.type === type.id,
-			};
-		}),
+		currentName: current ? current.design.name : null,
+		cost: won(cost),
+		affordable: state.money >= cost,
+		steps: BURST_STEPS.map((step) => ({
+			value: step.value,
+			label: step.label,
+			desc: step.desc,
+			// 브론즈 키트 기준으로 "한 판이 얼마나 가는지"를 미리 보여준다
+			preview: `한 판 ${duration(editionSeconds(step.value, bronze))} · 매출 ${rate(power * revenueOf(step.value) * bronze.power)}`,
+		})),
+		saved: state.meta.goodsDesigns.map((d) => ({ ...d })),
 	};
 }
 
@@ -288,21 +302,21 @@ function snapshotKit(state: GameState, lineId: string, factor: number): KitSheet
 	const character = line ? state.characters[line.characterId] : undefined;
 	if (!line || !character) return null;
 
-	const type = goodsType(line.type);
+	const burst = line.design.burst;
 	const power = salesPower(state, character);
 	const salvage = salvageValue(line);
 
 	return {
 		lineId,
-		title: `${character.name} ${type.name} 한정판`,
+		title: `${character.name} ‘${line.design.name}’ 한정판`,
 		salvage: salvage > 0 ? `팔던 재고는 떨이로 정리되어 ${won(salvage)}이 돌아옵니다.` : "",
 		priceSteps: PRICE_STEPS.map((s) => ({ ...s })),
 		factor,
 		kits: KITS.map((kit) => {
 			const cost = kitCost(state, character, line, kit);
-			const fair = fairPrice(power, type, kit);
+			const fair = fairPrice(power, burst, kit);
 			// 비싸게 낼수록 덜 팔린다. 총액은 늘지만 완판까지 오래 걸린다.
-			const demand = (kit.units / editionSeconds(type, kit)) * factor ** -BALANCE.goodsElasticity;
+			const demand = (kit.units / editionSeconds(burst, kit)) * factor ** -BALANCE.goodsElasticity;
 			const common = {
 				id: kit.id,
 				name: kit.name,
@@ -321,7 +335,7 @@ function snapshotKit(state: GameState, lineId: string, factor: number): KitSheet
 					auctioned: true,
 					price: won(fair * factor),
 					revenue: "경매",
-					lasts: duration(auctionSeconds(type, kit)),
+					lasts: duration(auctionSeconds(burst, kit)),
 					total: won(fair * factor),
 				};
 			}
@@ -429,23 +443,58 @@ function onClick(event: MouseEvent, engine: Engine): void {
 		}
 
 		// 라인 카드에서 열었으면 그 캐릭터를 미리 골라둔다
-		case "open-goods":
+		case "open-goods": {
+			const line = id ? lineOf(state, id) : undefined;
+			ui.goodsName = line?.design.name ?? "";
+			ui.goodsImage = line?.design.image ?? null;
+			ui.goodsBurst = line?.design.burst ?? 0;
+			ui.goodsError = null;
 			ui.goodsSheet = snapshotGoods(state, id || null);
 			break;
+		}
 
 		case "close-goods":
 			closeModals();
 			break;
 
 		case "goods-pick":
+			captureGoodsFields();
 			ui.goodsSheet = snapshotGoods(state, id);
 			break;
 
-		case "release-goods": {
-			const type = actionEl.dataset.type as Parameters<typeof releaseGoods>[2];
-			const res = releaseGoods(state, id, type);
-			toast(res.message, res.ok ? "good" : "bad");
-			if (res.ok) closeModals();
+		case "goods-burst":
+			captureGoodsFields();
+			ui.goodsBurst = Number(actionEl.dataset.value ?? "0");
+			break;
+
+		case "goods-load": {
+			const saved = state.meta.goodsDesigns.find((d) => d.name === actionEl.dataset.name);
+			if (saved) {
+				ui.goodsName = saved.name;
+				ui.goodsImage = saved.image;
+				ui.goodsBurst = saved.burst;
+			}
+			break;
+		}
+
+		case "create-goods": {
+			captureGoodsFields();
+			const target = ui.goodsSheet?.selectedId ?? "";
+			const res = releaseGoods(state, target, {
+				name: ui.goodsName,
+				image: ui.goodsImage,
+				burst: ui.goodsBurst,
+			});
+			if (res.ok) {
+				closeModals();
+				if (!engine.saveNow()) {
+					toast("저장 공간이 가득 찼어요. 사진이 큰 굿즈나 캐릭터를 정리해주세요.", "bad");
+				} else {
+					toast(res.message, "good");
+				}
+			} else {
+				ui.goodsError = res.message;
+			}
 			break;
 		}
 

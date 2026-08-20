@@ -18,26 +18,23 @@ export interface PickItem {
 	seated: boolean;
 }
 
-/** 굿즈 발매 시트도 열린 시점의 스냅샷으로만 그린다 (매 프레임 다시 그리면 버튼이 눌리지 않는다) */
+/**
+ * 굿즈 만들기 시트. 이름·사진은 입력값이라 ui에 붙들어 두고,
+ * 비용 같은 실시간 수치는 열린 시점의 스냅샷만 쓴다.
+ * (매 프레임 다시 그리면 타이핑 중인 값과 한글 조합이 날아간다)
+ */
 export interface GoodsSheet {
-	picks: { id: string; name: string; avatar: string; typeIcon: string }[];
+	picks: { id: string; name: string; avatar: string; hasLine: boolean }[];
 	selectedId: string;
 	selectedName: string;
 	/** 이미 내고 있는 굿즈 이름. 없으면 null */
-	currentType: string | null;
-	types: {
-		id: string;
-		name: string;
-		icon: string;
-		desc: string;
-		/** 한정판 매출 배수 */
-		power: string;
-		/** 한 판이 얼마나 오래 가는지 */
-		lasts: string;
-		cost: string;
-		affordable: boolean;
-		current: boolean;
-	}[];
+	currentName: string | null;
+	cost: string;
+	affordable: boolean;
+	/** 판매 성향별 미리보기 */
+	steps: { value: number; label: string; desc: string; preview: string }[];
+	/** 보관함에 저장해 둔 디자인 */
+	saved: { name: string; image: string | null; burst: number }[];
 }
 
 /** 한정판 찍기 시트. 등급 × 가격 조합의 결과를 미리 계산해 보여준다. */
@@ -79,8 +76,13 @@ export interface UiState {
 	/** 모달을 다시 그릴 때 되살릴 입력값. 타이핑 중에는 건드리지 않는다. */
 	uploadName: string;
 	uploadAgency: string;
-	/** 굿즈 발매 시트. null이면 닫혀 있다. */
+	/** 굿즈 만들기 시트. null이면 닫혀 있다. */
 	goodsSheet: GoodsSheet | null;
+	/** 만들고 있는 굿즈의 이름·사진·판매 성향 (입력 중에도 살아남아야 한다) */
+	goodsName: string;
+	goodsImage: string | null;
+	goodsBurst: number;
+	goodsError: string | null;
 	/** 한정판 찍기 시트 */
 	kitSheet: KitSheet | null;
 	bid: string;
@@ -101,6 +103,10 @@ export const ui: UiState = {
 	uploadName: "",
 	uploadAgency: "",
 	goodsSheet: null,
+	goodsName: "",
+	goodsImage: null,
+	goodsBurst: 0,
+	goodsError: null,
 	kitSheet: null,
 	bid: "",
 	qty: {},
@@ -117,6 +123,7 @@ export function closeModals(): void {
 	ui.pickerList = null;
 	ui.uploadOpen = false;
 	ui.goodsSheet = null;
+	ui.goodsError = null;
 	ui.kitSheet = null;
 }
 
