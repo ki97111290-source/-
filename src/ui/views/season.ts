@@ -12,6 +12,7 @@ import type { GameState } from "../../core/types";
 import { TROPHY_TIERS, honorMultiplier, nextTrophy, tierOf, trophyFor } from "../../game/season";
 import { TITLES } from "../../game/titles";
 import { html, raw } from "../dom";
+import { hint, stats, untilNextLocked } from "../parts";
 
 export function renderSeason(state: GameState): string {
 	const now = Date.now();
@@ -37,30 +38,43 @@ export function renderSeason(state: GameState): string {
 
 			${raw(weekLine(state))}
 
-			<div class="statrow">
-				<div class="stat"><span>시즌 팬심</span><b>💜 ${fmt(fanPoints)}</b></div>
-				<div class="stat"><span>명예 보너스</span><b>×${honorMultiplier(meta).toFixed(2)}</b></div>
-				<div class="stat"><span>트로피</span><b>${meta.trophies.length}개</b></div>
-				<div class="stat"><span>역대 최고</span><b>${fans(meta.bestFans)}</b></div>
-			</div>
+			${raw(
+				stats([
+					{ label: "시즌 팬심", value: `💜 ${fmt(fanPoints)}` },
+					// 아직 트로피가 없으면 보너스·기록 칸은 0만 보여준다
+					{
+						label: "명예 보너스",
+						value: `×${honorMultiplier(meta).toFixed(2)}`,
+						show: honorMultiplier(meta) > 1,
+					},
+					{ label: "트로피", value: `${meta.trophies.length}개`, show: meta.trophies.length > 0 },
+					{ label: "역대 최고", value: fans(meta.bestFans), show: meta.bestFans > 0 },
+				]),
+			)}
 
 			${raw(next ? nextGoal(fanPoints, next) : '<p class="notice notice--good">최고 등급까지 전부 달성했습니다. 이 시즌은 완주!</p>')}
 
-			<h2 class="section-title">등급표</h2>
-			<div class="tiers">${raw(TROPHY_TIERS.map((tier) => tierRow(tier.id, fanPoints)).join(""))}</div>
+			<h2 class="section-title">등급표${raw(tierTail(fanPoints))}</h2>
+			<div class="tiers">${raw(
+				untilNextLocked(TROPHY_TIERS, (tier) => fanPoints >= tier.need)
+					.map((tier) => tierRow(tier.id, fanPoints))
+					.join(""),
+			)}</div>
 
 			${raw(titleCase(state))}
 
-			<h2 class="section-title">트로피 진열장 ${meta.trophies.length}개</h2>
-			<div class="cabinet">${raw(cabinet(state))}</div>
+			${raw(
+				meta.trophies.length > 0
+					? html`<h2 class="section-title">트로피 진열장 ${meta.trophies.length}개</h2>
+						<div class="cabinet">${raw(cabinet(state))}</div>`
+					: "",
+			)}
 
-			<p class="hint">
-				<b>팬심</b>은 시즌 성적표라 쓰이지 않고 쌓이기만 합니다.
-				주식·경매로 번 돈은 팬심에 반영되지 않아요.
-				시즌이 끝나면 <b>원·업그레이드·주식·인기도</b>는 초기화됩니다.
-				남는 것은 <b>트로피</b>와 <b>업로드한 캐릭터 보관함</b>이고, 트로피가 주는
-				명예 보너스는 다음 시즌 수입에 그대로 붙습니다.
-			</p>
+			${raw(
+				hint(`<b>팬심</b>은 시즌 성적표라 쓰이지 않고 쌓이기만 합니다.
+				시즌이 끝나면 <b>원·업그레이드·주식·인기도</b>는 초기화되고,
+				남는 것은 <b>트로피·칭호·보관함</b>입니다.`),
+			)}
 		</section>
 	`;
 }
@@ -131,17 +145,23 @@ function tierRow(id: string, fanPoints: number): string {
 /** 굿즈로 얻는 칭호 진열장. 트로피와 달리 "무엇을 만들어 팔았나"에 붙는다. */
 function titleCase(state: GameState): string {
 	const owned = state.meta.titles;
-	const rows = TITLES.map((title) => {
-		const on = owned.includes(title.id);
-		return html`
-			<div class="titlecard ${on ? "titlecard--on" : ""}">
+	// 딴 칭호만 진열한다. 못 딴 건 개수만 알리면 충분하다.
+	const earned = TITLES.filter((t) => owned.includes(t.id));
+	if (earned.length === 0) {
+		return html`<h2 class="section-title">칭호 <span class="muted">· 아직 없음 (굿즈 한정판·유일본으로 받습니다)</span></h2>`;
+	}
+	const rows = earned
+		.map(
+			(title) => html`
+			<div class="titlecard titlecard--on">
 				<span class="titlecard__icon">${title.icon}</span>
 				<b>${title.name}</b>
 				<span class="muted small">${title.desc}</span>
-			</div>`;
-	}).join("");
+			</div>`,
+		)
+		.join("");
 	return html`
-		<h2 class="section-title">칭호 ${owned.length}/${TITLES.length}</h2>
+		<h2 class="section-title">칭호 ${earned.length}/${TITLES.length}</h2>
 		<div class="titles">${raw(rows)}</div>
 	`;
 }
@@ -194,4 +214,10 @@ export function renderSeasonModal(report: {
 			</div>
 		</div>
 	`;
+}
+
+/** 아직 못 본 등급이 몇 개 남았는지 */
+function tierTail(fanPoints: number): string {
+	const left = TROPHY_TIERS.filter((tier) => fanPoints < tier.need).length - 1;
+	return left > 0 ? html` <span class="muted">· 위로 ${left}단계 더</span>` : "";
 }

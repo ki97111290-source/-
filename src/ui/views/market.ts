@@ -13,6 +13,7 @@ import {
 } from "../../game/market";
 import { isRare, traitOf } from "../../game/traits";
 import { html, raw, sparkline } from "../dom";
+import { hint, stats } from "../parts";
 import { ui } from "../uiState";
 
 export function renderMarket(state: GameState): string {
@@ -25,25 +26,40 @@ export function renderMarket(state: GameState): string {
 	}
 	const profit = value - cost;
 
+	// 보유 중 → 응원 중 → 나머지 순. 스물여섯 줄을 스크롤해서 내 종목을 찾게 두지 않는다.
+	const rank = (c: Character) =>
+		(state.portfolio[c.id]?.shares ?? 0) > 0 ? 0 : state.slots.includes(c.id) ? 1 : 2;
 	const rows = Object.values(state.characters)
-		.sort((a, b) => b.popularity - a.popularity)
+		.sort((a, b) => rank(a) - rank(b) || b.popularity - a.popularity)
 		.map((c) => row(state, c))
 		.join("");
 
 	return html`
 		<section class="panel">
-			<div class="statrow">
-				<div class="stat"><span>평가액</span><b>${won(value)}</b></div>
-				<div class="stat"><span>평가손익</span><b class="${profit >= 0 ? "up" : "down"}">${won(profit)}</b></div>
-				<div class="stat"><span>다음 배당</span><b>${Math.ceil(state.nextDividendIn)}초</b></div>
-				<div class="stat"><span>배당 배수</span><b>×${dividendMultiplier(state).toFixed(2)}</b></div>
-			</div>
-			<p class="hint">
-				주가는 <b>인기도</b>를 따라갑니다. 완전 랜덤이 아니라 <b>적정가</b>(점선)로 계속 끌려가요 —
+			${raw(
+				stats([
+					// 아직 주식을 안 샀으면 평가액·손익 칸은 0원만 보여주는 빈칸이다
+					{ label: "평가액", value: won(value), show: entries.length > 0 },
+					{
+						label: "평가손익",
+						value: won(profit),
+						tone: profit >= 0 ? "up" : "down",
+						show: entries.length > 0,
+					},
+					{ label: "다음 배당", value: `${Math.ceil(state.nextDividendIn)}초` },
+					{
+						label: "배당 배수",
+						value: `×${dividendMultiplier(state).toFixed(2)}`,
+						show: dividendMultiplier(state) > 1,
+					},
+				]),
+			)}
+			${raw(
+				hint(`주가는 <b>인기도</b>를 따라갑니다. 완전 랜덤이 아니라 <b>적정가</b>(점선)로 계속 끌려가요 —
 				점선 아래면 싸고, 위면 비쌉니다. 인기도를 올려주는 건 응원뿐이라
 				<b>응원석에 앉힌 캐릭터만 ▲ 상승</b>합니다.
-				(수수료 ${(tradeFee(state) * 100).toFixed(2)}%, ${BALANCE.dividendPeriod}초마다 배당)
-			</p>
+				(수수료 ${(tradeFee(state) * 100).toFixed(2)}%, ${BALANCE.dividendPeriod}초마다 배당)`),
+			)}
 			<div class="rows">${raw(rows)}</div>
 		</section>
 	`;
@@ -81,7 +97,7 @@ function row(state: GameState, c: Character): string {
 				${raw(
 					mine > 0
 						? html`<b>${fmt(mine)}주</b><span class="${pnl >= 0 ? "up" : "down"}">${won(pnl)}</span>`
-						: `<span class="muted">미보유</span><span class="muted">잔량 ${fmt(available)}</span>`,
+						: html`<span class="muted small">잔량 ${fmt(available)}</span>`,
 				)}
 			</div>
 			<div class="row__trade">
@@ -104,9 +120,13 @@ function row(state: GameState, c: Character): string {
 	`;
 }
 
-/** 적정가 대비 얼마나 싸고 비싼지. 주가는 결국 적정가로 끌려온다. */
+/**
+ * 적정가 대비 얼마나 싸고 비싼지. 주가는 결국 적정가로 끌려온다.
+ * 적정가 근처면 아무것도 달지 않는다 — 스물여섯 줄에 전부 배지를 달면
+ * 정작 눈에 띄어야 할 저평가·고평가가 묻힌다.
+ */
 function valueTag(gap: number): string {
 	if (gap <= -0.03) return html`<span class="sig sig--cheap">저평가 ${pct(gap, 0)}</span>`;
 	if (gap >= 0.03) return html`<span class="sig sig--rich">고평가 ${pct(gap, 0)}</span>`;
-	return html`<span class="sig muted">적정가</span>`;
+	return "";
 }

@@ -223,6 +223,16 @@ img {
 	background: color-mix(in srgb, var(--accent) 9%, var(--panel));
 }
 
+/* 설명을 끈 상태 — 버튼이 꺼져 있음을 옅게 표시한다 */
+.iconbtn--off {
+	opacity: 0.45;
+}
+
+.questmore {
+	text-align: center;
+	padding: 2px 0;
+}
+
 .wallet {
 	text-align: right;
 	min-width: 0;

@@ -12,6 +12,7 @@ import { lineOf, lineRevenue } from "../../game/goods";
 import { slotCount } from "../../game/state";
 import { traitOf } from "../../game/traits";
 import { html, raw } from "../dom";
+import { hint, stats } from "../parts";
 
 export function renderRoom(state: GameState): string {
 	const slots = state.slots
@@ -30,17 +31,28 @@ export function renderRoom(state: GameState): string {
 
 	return html`
 		<section class="panel">
-			<div class="statrow">
-				<div class="stat"><span>굿즈 매출</span><b>${rate(incomePerSecond(state))}</b></div>
-				<div class="stat"><span>응원 속도</span><b>${cheersPerSecond(state).toFixed(1)}회/초</b></div>
-				<div class="stat"><span>응원 위력</span><b>×${cheerMultiplier(state).toFixed(2)}</b></div>
-				<div class="stat"><span>팬심 상승</span><b>💜 +${fmt(fansPerSecond(state))}/초</b></div>
-			</div>
-			<p class="hint">
-				응원은 <b>💜 팬심</b>(시즌 성적)과 <b>인기도</b>를 올립니다. 돈은 응원에서 바로 나오지 않고,
-				<b>굿즈</b>가 그 인기도를 원으로 바꿔요. 팬심은 쓰이지 않고 쌓이기만 합니다.
-				명성 보너스 ×${fameMultiplier(state).toFixed(2)} 적용 중.
-			</p>
+			${raw(
+				stats([
+					{ label: "굿즈 매출", value: rate(incomePerSecond(state)) },
+					{ label: "팬심 상승", value: `💜 +${fmt(fansPerSecond(state))}/초` },
+					{ label: "응원 속도", value: `${cheersPerSecond(state).toFixed(1)}회/초` },
+					// 아직 안 올린 배수는 볼 이유가 없다
+					{
+						label: "응원 위력",
+						value: `×${cheerMultiplier(state).toFixed(2)}`,
+						show: cheerMultiplier(state) > 1,
+					},
+					{
+						label: "명성 보너스",
+						value: `×${fameMultiplier(state).toFixed(2)}`,
+						show: fameMultiplier(state) > 1,
+					},
+				]),
+			)}
+			${raw(
+				hint(`응원은 <b>💜 팬심</b>(시즌 성적)과 <b>인기도</b>를 올립니다. 돈은 응원에서 바로 나오지 않고,
+				<b>굿즈</b>가 그 인기도를 원으로 바꿔요.`),
+			)}
 			<div class="slots">${raw(slots)}${raw(lockedCard)}</div>
 		</section>
 	`;

@@ -19,6 +19,7 @@ import {
 	topBid,
 } from "../../game/goods";
 import { html, raw } from "../dom";
+import { hint, stats, untilNextLocked } from "../parts";
 
 export function renderGoods(state: GameState): string {
 	const lines = state.goods.map((line) => lineCard(state, line)).join("");
@@ -27,18 +28,24 @@ export function renderGoods(state: GameState): string {
 
 	return html`
 		<section class="panel">
-			<div class="statrow">
-				<div class="stat"><span>굿즈 매출</span><b>${rate(goodsRevenue(state))}</b></div>
-				<div class="stat"><span>판매 중</span><b>${state.goods.length} / ${BALANCE.maxGoodsLines}</b></div>
-				<div class="stat"><span>공장 배수</span><b>×${goodsMultiplier(state).toFixed(2)}</b></div>
-				<div class="stat"><span>대기 중인 캐릭터</span><b>${idle}명</b></div>
-			</div>
-			<p class="hint">
-				이 게임에서 <b>돈이 들어오는 곳은 굿즈</b>입니다. 라인을 열어두면 상시로 조금씩 팔리고,
+			${raw(
+				stats([
+					{ label: "굿즈 매출", value: rate(goodsRevenue(state)) },
+					{ label: "판매 중", value: `${state.goods.length} / ${BALANCE.maxGoodsLines}` },
+					// 배수가 1이거나 대기 인원이 없으면 볼 이유가 없다
+					{
+						label: "공장 배수",
+						value: `×${goodsMultiplier(state).toFixed(2)}`,
+						show: goodsMultiplier(state) > 1,
+					},
+					{ label: "대기 중인 캐릭터", value: `${idle}명`, show: idle > 0 },
+				]),
+			)}
+			${raw(
+				hint(`이 게임에서 <b>돈이 들어오는 곳은 굿즈</b>입니다. 라인을 열어두면 상시로 조금씩 팔리고,
 				<b>키트</b>로 한정판을 찍으면 재고가 빠지는 동안 매출이 크게 뜁니다.
-				굿즈의 <b>이름과 사진은 자유</b>예요. 판매 성향만 골라주면 됩니다 —
-				은은할수록 오래 팔리고, 폭발적일수록 빨리 나갑니다.
-			</p>
+				굿즈의 <b>이름과 사진은 자유</b>예요.`),
+			)}
 
 			${raw(kitRack(state))}
 
@@ -55,20 +62,28 @@ export function renderGoods(state: GameState): string {
 	`;
 }
 
-/** 팬심으로 열리는 키트 등급표 */
+/**
+ * 팬심으로 열리는 키트 등급표.
+ * 열린 것과 **바로 다음 하나**만 보여준다. 다섯 개를 다 깔면
+ * 한 달 뒤에나 쓸 자물쇠가 화면 절반을 먹는다.
+ */
 function kitRack(state: GameState): string {
-	const rows = KITS.map((kit) => {
-		const on = kitUnlocked(state, kit);
-		return html`
+	const visible = untilNextLocked(KITS, (kit) => kitUnlocked(state, kit));
+	const hidden = KITS.length - visible.length;
+	const rows = visible
+		.map((kit) => {
+			const on = kitUnlocked(state, kit);
+			return html`
 			<div class="kit ${on ? "kit--on" : ""}">
 				<span class="kit__icon">${kit.icon}</span>
 				<span class="kit__name">${kit.name}</span>
 				<span class="muted small">${kit.units === 1 ? "단 1개 · 경매" : `${kit.units.toLocaleString("ko-KR")}개 한정`}</span>
 				<span class="muted small">${on ? (kit.title ? `칭호 ${kit.title}` : "해금됨") : `팬심 ${fmt(kit.fansNeeded)}`}</span>
 			</div>`;
-	}).join("");
+		})
+		.join("");
 	return html`
-		<h2 class="section-title">제작 키트 · 이번 시즌 팬심으로 해금</h2>
+		<h2 class="section-title">제작 키트${hidden > 0 ? ` · 그 위로 ${hidden}종 더` : ""}</h2>
 		<div class="kits">${raw(rows)}</div>
 	`;
 }
@@ -93,13 +108,7 @@ function lineCard(state: GameState, line: GoodsLine): string {
 					<span>인기도 <b>🔥 ${fmt(character.popularity)}</b></span>
 					${raw(line.soldOut > 0 ? html`<span>완판 <b>${line.soldOut}회</b></span>` : "")}
 				</div>
-				${raw(
-					auction
-						? auctionBox(state, line)
-						: edition
-							? editionBar(line)
-							: '<p class="muted small">한정판을 찍으면 매출이 크게 뜁니다.</p>',
-				)}
+				${raw(auction ? auctionBox(state, line) : edition ? editionBar(line) : "")}
 				${raw(
 					seated
 						? ""

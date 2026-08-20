@@ -34,6 +34,7 @@ import {
 import { buyShares, sellShares } from "../game/market";
 import { clearSave, exportSave, importSave, saveGame } from "../game/save";
 import { html, paint } from "./dom";
+import { hintsOn, toggleHints } from "./hints";
 import { effectiveTheme, toggleTheme } from "./theme";
 import {
 	type GoodsSheet,
@@ -120,6 +121,13 @@ function render(refs: Refs, state: GameState): void {
 				<span class="brand__season">${seasonLabelShort(state)} · ${remainingLabel(remainingOf(state.seasonEndsAt))} 남음</span>
 			</div>
 			<div class="hud__right">
+				<button
+					class="iconbtn ${hintsOn() ? "" : "iconbtn--off"}"
+					type="button"
+					data-action="hints"
+					title="${hintsOn() ? "설명 숨기기" : "설명 보기"}"
+					aria-label="${hintsOn() ? "설명 숨기기" : "설명 보기"}"
+				>💬</button>
 				<button
 					class="iconbtn"
 					type="button"
@@ -386,6 +394,10 @@ function onClick(event: MouseEvent, engine: Engine): void {
 
 		case "theme":
 			toast(toggleTheme() === "dark" ? "어두운 화면" : "밝은 화면");
+			break;
+
+		case "hints":
+			toast(toggleHints() ? "설명을 다시 켰어요" : "설명을 숨겼어요");
 			break;
 
 		case "seat": {
