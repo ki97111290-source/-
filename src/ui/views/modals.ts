@@ -1,5 +1,5 @@
 import { html, raw } from "../dom";
-import type { GoodsSheet, KitSheet, PickItem } from "../uiState";
+import type { GoodsSheet, KitSheet, PickItem, SaveSheet } from "../uiState";
 import { ui } from "../uiState";
 
 /**
@@ -12,7 +12,47 @@ export function renderModal(): string {
 	if (ui.uploadOpen) return uploadForm();
 	if (ui.kitSheet) return kitSheet(ui.kitSheet);
 	if (ui.goodsSheet) return goodsSheet(ui.goodsSheet);
+	if (ui.saveSheet) return saveSheet(ui.saveSheet);
 	return "";
+}
+
+/**
+ * 세이브를 글로 주고받는 시트.
+ * 칸의 내용은 마크업에 다시 넣지 않는다 — 매 프레임 다시 그리면 붙여넣던 글이 날아간다.
+ * 누를 때 칸에서 직접 읽는다.
+ */
+function saveSheet(snap: SaveSheet): string {
+	if (snap.mode === "export") {
+		return sheet(
+			"세이브 내보내기",
+			html`
+				<p class="muted small">
+					이 화면에서는 파일로 내려받을 수 없어요. 아래 내용을 통째로 복사해
+					메모장이나 메신저에 붙여 두었다가, 옮길 기기에서 ‘세이브 불러오기’에 붙여넣으세요.
+				</p>
+				<textarea class="savebox" id="save-text" readonly spellcheck="false">${snap.text}</textarea>
+				<button class="btn btn--primary" data-action="copy-save">복사하기</button>
+			`,
+			"close-save",
+		);
+	}
+
+	return sheet(
+		"세이브 불러오기",
+		html`
+			<p class="muted small">
+				내보낸 세이브를 붙여넣고 불러오세요. <b>지금 진행 상황은 덮어씌워집니다.</b>
+			</p>
+			<textarea class="savebox" id="save-text" spellcheck="false"
+				placeholder="여기에 붙여넣기">${snap.text}</textarea>
+			${raw(snap.error ? html`<p class="err">${snap.error}</p>` : "")}
+			<div class="btnrow">
+				<button class="btn btn--primary" data-action="paste-save">불러오기</button>
+				<button class="btn btn--ghost" data-action="pick-save-file">파일에서 고르기</button>
+			</div>
+		`,
+		"close-save",
+	);
 }
 
 function kitSheet(snap: KitSheet): string {

@@ -65,6 +65,17 @@ export interface KitSheet {
 	}[];
 }
 
+/**
+ * 세이브를 글로 주고받는 시트.
+ * 파일을 내려받거나 고를 수 없는 환경(아티팩트 뷰어)에서의 통로다.
+ */
+export interface SaveSheet {
+	mode: "export" | "import";
+	/** 내보내기일 때만 채운다 — 불러오기는 붙여넣을 빈칸으로 연다 */
+	text: string;
+	error: string | null;
+}
+
 export interface UiState {
 	tab: TabId;
 	/** 캐릭터 선택 패널이 열린 슬롯 번호 */
@@ -85,6 +96,8 @@ export interface UiState {
 	goodsError: string | null;
 	/** 한정판 찍기 시트 */
 	kitSheet: KitSheet | null;
+	/** 세이브를 글로 주고받는 시트 */
+	saveSheet: SaveSheet | null;
 	bid: string;
 	/** 종목별 주문 수량 입력값 */
 	qty: Record<string, string>;
@@ -108,6 +121,7 @@ export const ui: UiState = {
 	goodsBurst: 0,
 	goodsError: null,
 	kitSheet: null,
+	saveSheet: null,
 	bid: "",
 	qty: {},
 	toast: null,
@@ -125,6 +139,7 @@ export function closeModals(): void {
 	ui.goodsSheet = null;
 	ui.goodsError = null;
 	ui.kitSheet = null;
+	ui.saveSheet = null;
 }
 
 export const TABS: { id: TabId; label: string; icon: string }[] = [

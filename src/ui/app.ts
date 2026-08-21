@@ -32,8 +32,9 @@ import {
 	scrapEdition,
 } from "../game/goods";
 import { buyShares, sellShares } from "../game/market";
-import { clearSave, exportSave, importSave, saveGame } from "../game/save";
+import { clearSave, exportSave, importSave, lockSave, saveGame } from "../game/save";
 import { html, paint } from "./dom";
+import { copyText, inArtifactFrame, saveViaHost } from "./host";
 import { hintsOn, toggleHints, toggleWatchOnly } from "./prefs";
 import { effectiveTheme, toggleTheme } from "./theme";
 import {
@@ -247,7 +248,9 @@ function seasonLabelShort(state: GameState): string {
 }
 
 function fieldValue(id: string): string {
-	return (document.getElementById(id) as HTMLInputElement | null)?.value ?? "";
+	const field = document.getElementById(id);
+	if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) return field.value;
+	return "";
 }
 
 function captureUploadFields(): void {
@@ -581,11 +584,29 @@ function onClick(event: MouseEvent, engine: Engine): void {
 			return;
 
 		case "export":
-			exportToFile(state);
+			void exportToFile(state);
 			break;
 
 		case "import":
-			importFromFile();
+			// 뷰어 안에서는 파일 선택 창이 열리지 않을 수 있어, 붙여넣기 칸을 함께 연다.
+			if (inArtifactFrame()) ui.saveSheet = { mode: "import", text: "", error: null };
+			else pickSaveFile();
+			break;
+
+		case "close-save":
+			closeModals();
+			break;
+
+		case "copy-save":
+			void copySave();
+			break;
+
+		case "paste-save":
+			applySave(fieldValue("save-text"));
+			break;
+
+		case "pick-save-file":
+			pickSaveFile();
 			break;
 
 		case "reset":
@@ -686,32 +707,81 @@ function spawnIdleGains(view: HTMLElement, state: GameState, now: number): void 
 	}
 }
 
-function exportToFile(state: GameState): void {
-	const blob = new Blob([exportSave(state)], { type: "application/json" });
+async function exportToFile(state: GameState): Promise<void> {
+	const json = exportSave(state);
+	const filename = `fandom-tycoon-${new Date().toISOString().slice(0, 10)}.json`;
+
+	// 아티팩트 뷰어 안에서는 <a download>가 조용히 무시된다.
+	// 내려받은 척하지 말고, 뷰어의 저장 창을 쓰거나 글로 띄운다.
+	if (inArtifactFrame()) {
+		switch (await saveViaHost(filename, json)) {
+			case "saved":
+				toast("세이브를 내려받았어요.", "good");
+				return;
+			case "declined":
+				toast("저장을 취소했어요.");
+				return;
+			case "busy":
+				toast("저장 창이 이미 열려 있어요.", "bad");
+				return;
+			default:
+				ui.saveSheet = { mode: "export", text: json, error: null };
+				return;
+		}
+	}
+
+	const blob = new Blob([json], { type: "application/json" });
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;
-	a.download = `fandom-tycoon-${new Date().toISOString().slice(0, 10)}.json`;
+	a.download = filename;
 	a.click();
 	setTimeout(() => URL.revokeObjectURL(url), 1000);
 	toast("세이브를 내려받았어요.", "good");
 }
 
-function importFromFile(): void {
+async function copySave(): Promise<void> {
+	const text = ui.saveSheet?.text ?? "";
+	if (await copyText(text)) {
+		toast("복사했어요. 안전한 곳에 붙여넣어 두세요.", "good");
+		return;
+	}
+	// 클립보드가 막힌 환경 — 직접 긁어 복사하도록 전부 선택해 준다.
+	const box = document.getElementById("save-text");
+	if (box instanceof HTMLTextAreaElement) {
+		box.focus();
+		box.select();
+	}
+	toast("직접 복사해주세요. 전부 선택해 뒀어요.", "bad");
+}
+
+function pickSaveFile(): void {
 	const input = document.createElement("input");
 	input.type = "file";
 	input.accept = "application/json,.json";
 	input.addEventListener("change", async () => {
 		const file = input.files?.[0];
 		if (!file) return;
-		try {
-			const state = importSave(await file.text());
-			if (!saveGame(state)) throw new Error("저장 공간이 부족해 불러오지 못했어요.");
-			toast("불러왔어요. 새로고침합니다.", "good");
-			setTimeout(() => location.reload(), 600);
-		} catch (err) {
-			toast(err instanceof Error ? err.message : "세이브를 읽지 못했어요.", "bad");
-		}
+		applySave(await file.text());
 	});
 	input.click();
+}
+
+function applySave(text: string): void {
+	if (!text.trim()) {
+		toast("붙여넣은 내용이 없어요.", "bad");
+		return;
+	}
+	try {
+		const state = importSave(text);
+		if (!saveGame(state)) throw new Error("저장 공간이 부족해 불러오지 못했어요.");
+		lockSave();
+		toast("불러왔어요. 새로고침합니다.", "good");
+		setTimeout(() => location.reload(), 600);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "세이브를 읽지 못했어요.";
+		// 시트가 열려 있으면 붙여넣은 글을 지우지 않고 그대로 되돌려 놓는다.
+		if (ui.saveSheet?.mode === "import") ui.saveSheet = { mode: "import", text, error: message };
+		toast(message, "bad");
+	}
 }

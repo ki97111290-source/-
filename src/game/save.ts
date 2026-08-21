@@ -91,7 +91,19 @@ export function loadGame(): { state: GameState; fresh: boolean } {
 	}
 }
 
+/**
+ * 새로고침 직전에 저장을 잠근다.
+ * 불러오기·초기화 뒤에는 곧바로 새로고침하는데, 그때 beforeunload 자동 저장이
+ * 화면에 떠 있던 예전 상태를 다시 써 버려 방금 넣은 세이브가 사라진다.
+ */
+let locked = false;
+
+export function lockSave(): void {
+	locked = true;
+}
+
 export function saveGame(state: GameState): boolean {
+	if (locked) return true;
 	try {
 		state.lastTick = Date.now();
 		localStorage.setItem(KEY, JSON.stringify(state));
@@ -105,6 +117,8 @@ export function saveGame(state: GameState): boolean {
 
 export function clearSave(): void {
 	localStorage.removeItem(KEY);
+	// 지운 직후 새로고침한다. 그 사이 자동 저장이 끼어들면 지운 보람이 없다.
+	lockSave();
 }
 
 export function exportSave(state: GameState): string {
@@ -112,7 +126,12 @@ export function exportSave(state: GameState): string {
 }
 
 export function importSave(text: string): GameState {
-	const parsed = JSON.parse(text) as Partial<GameState>;
+	let parsed: Partial<GameState>;
+	try {
+		parsed = JSON.parse(text) as Partial<GameState>;
+	} catch {
+		throw new Error("세이브를 읽지 못했어요. 내용이 잘리지 않았는지 확인해주세요.");
+	}
 	const state = migrate(parsed);
 	if (!state) throw new Error("세이브 형식이 올바르지 않아요.");
 	return state;

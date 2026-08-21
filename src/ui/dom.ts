@@ -45,7 +45,10 @@ function restoreFocus(root: HTMLElement, snap: FocusSnapshot | null): void {
 	const next = root.querySelector<HTMLElement>(`#${CSS.escape(snap.id)}`);
 	if (!next) return;
 	next.focus({ preventScroll: true });
-	if (snap.start !== null && next instanceof HTMLInputElement) {
+	if (
+		snap.start !== null &&
+		(next instanceof HTMLInputElement || next instanceof HTMLTextAreaElement)
+	) {
 		try {
 			next.setSelectionRange(snap.start, snap.end ?? snap.start);
 		} catch {
