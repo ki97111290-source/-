@@ -86,10 +86,9 @@ function bidBox(state: GameState, min: number, leading: boolean): string {
 		<div class="bidbox">
 			<input
 				id="bid-input"
-				type="number"
+				type="text"
 				inputmode="numeric"
-				min="${min}"
-				step="1"
+				autocomplete="off"
 				placeholder="${min}"
 				value="${ui.bid}"
 				data-role="bid"

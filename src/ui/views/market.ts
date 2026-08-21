@@ -125,15 +125,16 @@ function row(state: GameState, c: Character): string {
 				<input
 					id="qty-${c.id}"
 					class="qty"
-					type="number"
+					type="text"
 					inputmode="numeric"
-					min="1"
-					step="1"
+					autocomplete="off"
 					value="${qty}"
 					data-role="qty"
 					data-id="${c.id}"
 					aria-label="${c.name} 주문 수량"
 				/>
+				<button class="btn btn--sm btn--ghost" data-action="max-buy" data-id="${c.id}"
+					title="보유 현금의 절반까지" aria-label="${c.name} 현금 절반으로 살 수 있는 최대 수량">50%</button>
 				<button class="btn btn--sm" data-action="buy" data-id="${c.id}">매수</button>
 				<button class="btn btn--sm btn--ghost" data-action="sell" data-id="${c.id}">매도</button>
 			</div>

@@ -1302,11 +1302,12 @@ button:focus-visible {
 .row__trade {
 	grid-area: trade;
 	display: grid;
-	grid-template-columns: 1fr auto auto;
+	grid-template-columns: 1fr auto auto auto;
 	gap: 6px;
 }
 .qty {
 	max-width: 110px;
+	font-variant-numeric: tabular-nums;
 }
 .sig {
 	display: inline-block;
@@ -1351,7 +1352,7 @@ button:focus-visible {
 		grid-template-areas: "ava name spark price hold trade";
 	}
 	.row__trade {
-		grid-template-columns: 84px auto auto;
+		grid-template-columns: 84px auto auto auto;
 	}
 }
 

@@ -31,7 +31,7 @@ import {
 	salvageValue,
 	scrapEdition,
 } from "../game/goods";
-import { buyShares, sellShares } from "../game/market";
+import { buyShares, maxBuyable, sellShares, tradeFee } from "../game/market";
 import { clearSave, exportSave, importSave, lockSave, saveGame } from "../game/save";
 import { html, paint } from "./dom";
 import { copyText, inArtifactFrame, saveViaHost } from "./host";
@@ -204,13 +204,21 @@ function bindEvents(root: HTMLElement, engine: Engine): void {
 	});
 }
 
+/**
+ * 수량·입찰가 칸은 type="text"다. number 칸은 캐럿 위치를 알려주지 않아
+ * (selectionStart가 null) 다시 그릴 때마다 커서가 맨 앞으로 튀어
+ * "1000"이 "0001"로 뒤집힌다. 대신 숫자가 아닌 글자는 여기서 걸러낸다.
+ */
 function onInput(event: Event): void {
 	const target = event.target;
 	if (!(target instanceof HTMLInputElement)) return;
-	if (target.dataset.role === "bid") ui.bid = target.value;
-	if (target.dataset.role === "qty" && target.dataset.id) {
-		ui.qty[target.dataset.id] = target.value;
-	}
+	const role = target.dataset.role;
+	if (role !== "bid" && role !== "qty") return;
+
+	const digits = target.value.replace(/[^0-9]/g, "");
+	if (digits !== target.value) target.value = digits;
+	if (role === "bid") ui.bid = digits;
+	else if (target.dataset.id) ui.qty[target.dataset.id] = digits;
 }
 
 async function onChange(event: Event): Promise<void> {
@@ -442,6 +450,19 @@ function onClick(event: MouseEvent, engine: Engine): void {
 		case "bid":
 			placeBid(state, Number(ui.bid || 0));
 			break;
+
+		case "max-buy": {
+			const character = state.characters[id];
+			if (!character) break;
+			const max = maxBuyable(state, character);
+			if (max <= 0) {
+				toast("현금의 절반으로는 한 주도 살 수 없어요.", "bad");
+				break;
+			}
+			ui.qty[id] = String(max);
+			toast(`최대 ${fmt(max)}주 · ${won(max * character.price * (1 + tradeFee(state)))}`);
+			break;
+		}
 
 		case "buy": {
 			const res = buyShares(state, id, qtyOf(id));

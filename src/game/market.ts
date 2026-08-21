@@ -30,6 +30,17 @@ export function floatingShares(state: GameState, character: Character): number {
 	return Math.max(0, character.shares - held);
 }
 
+/** 한 번에 밀어 넣을 수 있는 현금 비율. 한 종목에 전 재산을 걸지 않게 하는 한도다. */
+export const MAX_BUY_SHARE = 0.5;
+
+/** 보유 현금의 절반으로 살 수 있는 주식 수 (수수료 포함, 시장 잔량까지만) */
+export function maxBuyable(state: GameState, character: Character): number {
+	const unit = character.price * (1 + tradeFee(state));
+	if (unit <= 0) return 0;
+	const affordable = Math.floor((state.money * MAX_BUY_SHARE) / unit);
+	return Math.max(0, Math.min(affordable, floatingShares(state, character)));
+}
+
 export function holdingValue(state: GameState, id: string): number {
 	const holding = state.portfolio[id];
 	const character = state.characters[id];
