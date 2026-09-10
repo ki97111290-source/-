@@ -1,12 +1,12 @@
-import { duration, fmt, won } from "../../core/format";
+import { won } from "../../core/format";
 import { remainingLabel, seasonWeekOf, weekUnlockInOf } from "../../core/season";
 import type { GameState } from "../../core/types";
 import { ACHIEVEMENTS } from "../../game/achievements";
 import { TIER_NAMES, UPGRADES, type UpgradeTier, upgradeCost } from "../../game/balance";
-import { fameMultiplier, offlineEfficiency } from "../../game/economy";
-import { netWorth, upgradeLevel } from "../../game/state";
+import { fameMultiplier } from "../../game/economy";
+import { upgradeLevel } from "../../game/state";
 import { html, raw } from "../dom";
-import { hint, stats } from "../parts";
+import { hint } from "../parts";
 
 const TIER_HINTS: Record<UpgradeTier, string> = {
 	0: "응원석과 화력을 깔아 기반을 만듭니다.",
@@ -16,7 +16,6 @@ const TIER_HINTS: Record<UpgradeTier, string> = {
 
 export function renderShop(state: GameState): string {
 	const week = seasonWeekOf(state.seasonStartedAt);
-	const played = (Date.now() - state.startedAt) / 1000;
 	const tiers = ([0, 1, 2] as UpgradeTier[]).map((tier) => tierBlock(state, tier, week)).join("");
 
 	return html`
@@ -33,27 +32,6 @@ export function renderShop(state: GameState): string {
 			</h2>
 			<div class="quests">${raw(quests(state))}</div>
 
-			<h2 class="section-title">기록</h2>
-			${raw(
-				stats([
-					{ label: "총 자산", value: won(netWorth(state)) },
-					{ label: "누적 수입", value: won(state.totalEarned) },
-					{ label: "누적 응원", value: `${fmt(state.totalCheers)}회` },
-					{ label: "플레이 시간", value: duration(played) },
-				]),
-			)}
-			${raw(
-				hint(`페이지를 켜두면 수입 100%가 그대로 들어옵니다. 브라우저 탭이 뒤로 밀려도 마찬가지예요.
-				완전히 닫아둔 동안에는 ${Math.round(offlineEfficiency(state) * 100)}%가 최대 8시간까지 쌓입니다.`),
-			)}
-
-			<h2 class="section-title">데이터</h2>
-			<div class="btnrow">
-				<button class="btn btn--ghost btn--sm" data-action="export">세이브 내보내기</button>
-				<button class="btn btn--ghost btn--sm" data-action="import">세이브 불러오기</button>
-				<button class="btn btn--ghost btn--sm danger" data-action="reset">처음부터 다시</button>
-			</div>
-			${raw(hint("진행 상황은 이 브라우저에만 저장됩니다. 기기를 옮길 땐 세이브를 내보내세요."))}
 		</section>
 	`;
 }

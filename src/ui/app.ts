@@ -6,7 +6,7 @@ import { consign, placePlayerBid } from "../game/auction";
 import { fileToAvatar } from "../game/avatar";
 import { BALANCE } from "../game/balance";
 import { ownedCharacters } from "../game/characters";
-import { cheersPerSlot, incomePerSecond, slotIncome } from "../game/economy";
+import { cheersPerSlot, incomePerSecond, offlineEfficiency, slotIncome } from "../game/economy";
 import type { Engine } from "../game/engine";
 import {
 	BURST_STEPS,
@@ -33,21 +33,22 @@ import {
 } from "../game/goods";
 import { buyShares, maxBuyable, sellShares, tradeFee } from "../game/market";
 import { clearSave, exportSave, importSave, lockSave, saveGame } from "../game/save";
-import { html, paint } from "./dom";
+import { netWorth } from "../game/state";
+import { html, paint, raw } from "./dom";
 import { copyText, inArtifactFrame, saveViaHost } from "./host";
-import { hintsOn, toggleHints, toggleWatchOnly } from "./prefs";
-import { effectiveTheme, toggleTheme } from "./theme";
+import { toggleHints, toggleWatchOnly } from "./prefs";
+import { toggleTheme } from "./theme";
 import {
 	type GoodsSheet,
 	type KitSheet,
 	type PickItem,
+	type SettingsSheet,
 	TABS,
 	type TabId,
 	closeModals,
 	toast,
 	ui,
 } from "./uiState";
-import { renderAuction } from "./views/auctionView";
 import { renderGoods } from "./views/goods";
 import { renderMarket } from "./views/market";
 import { renderModal } from "./views/modals";
@@ -123,19 +124,12 @@ function render(refs: Refs, state: GameState): void {
 			</div>
 			<div class="hud__right">
 				<button
-					class="iconbtn ${hintsOn() ? "" : "iconbtn--off"}"
-					type="button"
-					data-action="hints"
-					title="${hintsOn() ? "설명 숨기기" : "설명 보기"}"
-					aria-label="${hintsOn() ? "설명 숨기기" : "설명 보기"}"
-				>💬</button>
-				<button
 					class="iconbtn"
 					type="button"
-					data-action="theme"
-					title="${effectiveTheme() === "dark" ? "밝은 화면으로" : "어두운 화면으로"}"
-					aria-label="${effectiveTheme() === "dark" ? "밝은 화면으로 전환" : "어두운 화면으로 전환"}"
-				>${effectiveTheme() === "dark" ? "☀️" : "🌙"}</button>
+					data-action="open-settings"
+					title="설정"
+					aria-label="설정 열기"
+				>⚙</button>
 				<div class="wallet">
 					<div class="wallet__coin">${won(state.money)}</div>
 					<div class="wallet__sub">
@@ -148,13 +142,13 @@ function render(refs: Refs, state: GameState): void {
 
 	paint(
 		refs.tabs,
-		TABS.map(
-			(
-				t,
-			) => html`<button class="tab ${ui.tab === t.id ? "tab--on" : ""}" data-action="tab" data-id="${t.id}">
-				<span aria-hidden="true">${t.icon}</span>${t.label}
-			</button>`,
-		).join(""),
+		TABS.map((t) => {
+			// 경매는 캐릭터 탭 안에 있다. 매물이 올라오면 점으로 알린다.
+			const live = t.id === "roster" && state.auction;
+			return html`<button class="tab ${ui.tab === t.id ? "tab--on" : ""}" data-action="tab" data-id="${t.id}">
+				<span aria-hidden="true">${t.icon}</span>${t.label}${raw(live ? '<i class="tab__dot" title="경매 진행 중"></i>' : "")}
+			</button>`;
+		}).join(""),
 	);
 
 	paint(refs.view, renderView(state));
@@ -163,7 +157,8 @@ function render(refs: Refs, state: GameState): void {
 	paint(
 		refs.log,
 		state.log
-			.slice(0, 4)
+			// 아래 띠는 두 줄까지만. 그 위는 소식이 아니라 벽이 된다.
+			.slice(0, 2)
 			.map((entry) => html`<p class="log log--${entry.kind}">${entry.text}</p>`)
 			.join("") || '<p class="log muted">여기에 소식이 표시됩니다.</p>',
 	);
@@ -183,8 +178,6 @@ function renderView(state: GameState): string {
 			return renderRoster(state);
 		case "goods":
 			return renderGoods(state);
-		case "auction":
-			return renderAuction(state);
 		case "market":
 			return renderMarket(state);
 		case "season":
@@ -270,6 +263,20 @@ function captureUploadFields(): void {
 function captureGoodsFields(): void {
 	if (!ui.goodsSheet) return;
 	ui.goodsName = fieldValue("goods-name");
+}
+
+/** 설정 시트 스냅샷. 열린 동안 숫자가 흔들리면 버튼이 손가락 밑에서 교체된다. */
+function snapshotSettings(state: GameState): SettingsSheet {
+	const played = (Date.now() - state.startedAt) / 1000;
+	return {
+		records: [
+			{ label: "총 자산", value: won(netWorth(state)) },
+			{ label: "누적 수입", value: won(state.totalEarned) },
+			{ label: "누적 응원", value: `${fmt(state.totalCheers)}회` },
+			{ label: "플레이 시간", value: duration(played) },
+		],
+		offline: `${Math.round(offlineEfficiency(state) * 100)}%`,
+	};
 }
 
 function snapshotOwned(state: GameState): PickItem[] {
@@ -407,6 +414,14 @@ function onClick(event: MouseEvent, engine: Engine): void {
 			toast(toggleTheme() === "dark" ? "어두운 화면" : "밝은 화면");
 			break;
 
+		case "open-settings":
+			ui.settings = snapshotSettings(state);
+			break;
+
+		case "close-settings":
+			closeModals();
+			break;
+
 		case "hints":
 			toast(toggleHints() ? "설명을 다시 켰어요" : "설명을 숨겼어요");
 			break;
@@ -436,7 +451,7 @@ function onClick(event: MouseEvent, engine: Engine): void {
 			const err = consign(state, id, Math.random);
 			if (err) toast(err, "bad");
 			else {
-				ui.tab = "auction";
+				ui.tab = "roster";
 				toast("경매장에 출품했어요.", "good");
 			}
 			break;
@@ -449,6 +464,11 @@ function onClick(event: MouseEvent, engine: Engine): void {
 
 		case "bid":
 			placeBid(state, Number(ui.bid || 0));
+			break;
+
+		case "pick-row":
+			// 스물여섯 줄에 주문 칸을 전부 깔지 않는다. 누른 줄에만 열어 준다.
+			ui.tradeRow = ui.tradeRow === id ? null : id;
 			break;
 
 		case "max-buy": {
@@ -615,7 +635,8 @@ function onClick(event: MouseEvent, engine: Engine): void {
 			break;
 
 		case "close-save":
-			closeModals();
+			// 설정 시트에서 열었다면 그리로 되돌아간다 (renderModal이 그다음으로 그린다)
+			ui.saveSheet = null;
 			break;
 
 		case "copy-save":

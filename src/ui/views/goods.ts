@@ -10,7 +10,6 @@ import {
 	burstLabel,
 	editionRevenue,
 	goodsMultiplier,
-	goodsRevenue,
 	kitOf,
 	kitUnlocked,
 	lineOf,
@@ -30,7 +29,7 @@ export function renderGoods(state: GameState): string {
 		<section class="panel">
 			${raw(
 				stats([
-					{ label: "굿즈 매출", value: rate(goodsRevenue(state)) },
+					// 굿즈 매출 = 헤더에 떠 있는 그 숫자다. 두 번 그리지 않는다.
 					{ label: "판매 중", value: `${state.goods.length} / ${BALANCE.maxGoodsLines}` },
 					// 배수가 1이거나 대기 인원이 없으면 볼 이유가 없다
 					{

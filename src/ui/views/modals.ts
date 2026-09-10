@@ -1,5 +1,7 @@
 import { html, raw } from "../dom";
-import type { GoodsSheet, KitSheet, PickItem, SaveSheet } from "../uiState";
+import { hintsOn } from "../prefs";
+import { effectiveTheme } from "../theme";
+import type { GoodsSheet, KitSheet, PickItem, SaveSheet, SettingsSheet } from "../uiState";
 import { ui } from "../uiState";
 
 /**
@@ -13,7 +15,45 @@ export function renderModal(): string {
 	if (ui.kitSheet) return kitSheet(ui.kitSheet);
 	if (ui.goodsSheet) return goodsSheet(ui.goodsSheet);
 	if (ui.saveSheet) return saveSheet(ui.saveSheet);
+	if (ui.settings) return settingsSheet(ui.settings);
 	return "";
+}
+
+/** 가끔 한 번 쓰는 것들 — 화면 취향, 기록, 세이브. 본 화면에서는 걷어냈다. */
+function settingsSheet(snap: SettingsSheet): string {
+	const records = snap.records
+		.map((r) => html`<div class="stat"><span>${r.label}</span><b>${r.value}</b></div>`)
+		.join("");
+
+	return sheet(
+		"설정",
+		html`
+			<div class="btnrow">
+				<button class="btn btn--ghost btn--sm" data-action="hints">
+					💬 설명 ${hintsOn() ? "끄기" : "켜기"}
+				</button>
+				<button class="btn btn--ghost btn--sm" data-action="theme">
+					${effectiveTheme() === "dark" ? "☀️ 밝은 화면" : "🌙 어두운 화면"}
+				</button>
+			</div>
+
+			<h3 class="section-title">기록</h3>
+			<div class="statrow">${raw(records)}</div>
+			<p class="muted small">
+				페이지를 켜두면 수입 100%가 그대로 들어옵니다. 완전히 닫아둔 동안에는
+				${snap.offline}가 최대 8시간까지 쌓여요.
+			</p>
+
+			<h3 class="section-title">세이브</h3>
+			<div class="btnrow">
+				<button class="btn btn--ghost btn--sm" data-action="export">내보내기</button>
+				<button class="btn btn--ghost btn--sm" data-action="import">불러오기</button>
+				<button class="btn btn--ghost btn--sm danger" data-action="reset">처음부터 다시</button>
+			</div>
+			<p class="muted small">진행 상황은 이 브라우저에만 저장됩니다. 기기를 옮길 땐 내보내세요.</p>
+		`,
+		"close-settings",
+	);
 }
 
 /**

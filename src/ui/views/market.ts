@@ -64,6 +64,7 @@ export function renderMarket(state: GameState): string {
 				hint(`주가는 <b>인기도</b>를 따라갑니다. 완전 랜덤이 아니라 <b>적정가</b>(점선)로 계속 끌려가요 —
 				점선 아래면 싸고, 위면 비쌉니다. 인기도를 올려주는 건 응원뿐이라
 				<b>응원석에 앉힌 캐릭터만 ▲ 상승</b>합니다.
+				<b>종목을 누르면</b> 매수·매도 칸이 열려요.
 				(수수료 ${(tradeFee(state) * 100).toFixed(2)}%, ${BALANCE.dividendPeriod}초마다 배당)`),
 			)}
 			${raw(
@@ -89,16 +90,17 @@ function watched(state: GameState, c: Character): boolean {
 function row(state: GameState, c: Character): string {
 	const holding = state.portfolio[c.id];
 	const change = changeRate(c);
-	const qty = ui.qty[c.id] ?? "10";
 	const available = floatingShares(state, c);
 	const mine = holding?.shares ?? 0;
 	const pnl = holding ? (c.price - holding.avgCost) * holding.shares : 0;
 	const gap = valuation(c);
 	// 초당 변화는 너무 작아 눈에 안 띈다. 분당으로 보여준다.
 	const trend = popularityTrend(state, c) * 60;
+	const open = ui.tradeRow === c.id;
 
 	return html`
-		<article class="row" style="--accent:${c.color}">
+		<article class="row ${open ? "row--open" : ""}" style="--accent:${c.color}"
+			data-action="pick-row" data-id="${c.id}" aria-expanded="${open ? "true" : "false"}">
 			<img class="ava" src="${c.avatar}" alt="" />
 			<div class="row__name">
 				<b>${c.name}</b>
@@ -120,25 +122,34 @@ function row(state: GameState, c: Character): string {
 						? html`<b>${fmt(mine)}주</b><span class="${pnl >= 0 ? "up" : "down"}">${won(pnl)}</span>`
 						: html`<span class="muted small">잔량 ${fmt(available)}</span>`,
 				)}
+				<span class="chev muted small">${open ? "닫기 ▴" : "거래 ▾"}</span>
 			</div>
-			<div class="row__trade">
-				<input
-					id="qty-${c.id}"
-					class="qty"
-					type="text"
-					inputmode="numeric"
-					autocomplete="off"
-					value="${qty}"
-					data-role="qty"
-					data-id="${c.id}"
-					aria-label="${c.name} 주문 수량"
-				/>
-				<button class="btn btn--sm btn--ghost" data-action="max-buy" data-id="${c.id}"
-					title="보유 현금의 절반까지" aria-label="${c.name} 현금 절반으로 살 수 있는 최대 수량">50%</button>
-				<button class="btn btn--sm" data-action="buy" data-id="${c.id}">매수</button>
-				<button class="btn btn--sm btn--ghost" data-action="sell" data-id="${c.id}">매도</button>
-			</div>
+			${raw(open ? tradeBox(c) : "")}
 		</article>
+	`;
+}
+
+/** 주문 칸은 누른 줄에만 그린다. 스물여섯 줄에 다 깔면 화면이 입력칸 밭이 된다. */
+function tradeBox(c: Character): string {
+	// data-stop — 줄 전체가 접기 버튼이라, 주문 칸 안을 누른 것이 접기로 새지 않게 막는다
+	return html`
+		<div class="row__trade" data-stop="1">
+			<input
+				id="qty-${c.id}"
+				class="qty"
+				type="text"
+				inputmode="numeric"
+				autocomplete="off"
+				value="${ui.qty[c.id] ?? "10"}"
+				data-role="qty"
+				data-id="${c.id}"
+				aria-label="${c.name} 주문 수량"
+			/>
+			<button class="btn btn--sm btn--ghost" data-action="max-buy" data-id="${c.id}"
+				title="보유 현금의 절반까지" aria-label="${c.name} 현금 절반으로 살 수 있는 최대 수량">50%</button>
+			<button class="btn btn--sm" data-action="buy" data-id="${c.id}">매수</button>
+			<button class="btn btn--sm btn--ghost" data-action="sell" data-id="${c.id}">매도</button>
+		</div>
 	`;
 }
 

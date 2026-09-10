@@ -1,6 +1,6 @@
 import type { SeasonReport } from "../game/season";
 
-export type TabId = "room" | "roster" | "goods" | "auction" | "market" | "season" | "shop";
+export type TabId = "room" | "roster" | "goods" | "market" | "season" | "shop";
 
 export interface Toast {
 	text: string;
@@ -76,6 +76,15 @@ export interface SaveSheet {
 	error: string | null;
 }
 
+/**
+ * 설정 시트. 기록·세이브·화면 취향처럼 "가끔 한 번" 쓰는 것들을 한곳에 모았다.
+ * 숫자는 열린 시점의 스냅샷이다 — 매 프레임 다시 그리면 버튼이 손가락 밑에서 교체된다.
+ */
+export interface SettingsSheet {
+	records: { label: string; value: string }[];
+	offline: string;
+}
+
 export interface UiState {
 	tab: TabId;
 	/** 캐릭터 선택 패널이 열린 슬롯 번호 */
@@ -98,9 +107,13 @@ export interface UiState {
 	kitSheet: KitSheet | null;
 	/** 세이브를 글로 주고받는 시트 */
 	saveSheet: SaveSheet | null;
+	/** 설정 시트 */
+	settings: SettingsSheet | null;
 	bid: string;
 	/** 종목별 주문 수량 입력값 */
 	qty: Record<string, string>;
+	/** 주식 탭에서 매수·매도 칸을 펼쳐 둔 종목. 한 번에 하나만 펼친다. */
+	tradeRow: string | null;
 	toast: Toast | null;
 	/** 시즌이 넘어간 직후 보여줄 결과 */
 	seasonReport: SeasonReport | null;
@@ -122,8 +135,10 @@ export const ui: UiState = {
 	goodsError: null,
 	kitSheet: null,
 	saveSheet: null,
+	settings: null,
 	bid: "",
 	qty: {},
+	tradeRow: null,
 	toast: null,
 	seasonReport: null,
 };
@@ -140,13 +155,17 @@ export function closeModals(): void {
 	ui.goodsError = null;
 	ui.kitSheet = null;
 	ui.saveSheet = null;
+	ui.settings = null;
 }
 
+/**
+ * 탭은 여섯 개까지만 둔다. 경매는 캐릭터를 사고파는 일이라 ‘캐릭터’ 탭 안에 있고,
+ * 매물이 올라와 있으면 탭에 점이 붙어 들여다볼 때를 알려준다.
+ */
 export const TABS: { id: TabId; label: string; icon: string }[] = [
 	{ id: "room", label: "응원 룸", icon: "📣" },
 	{ id: "roster", label: "캐릭터", icon: "🎀" },
 	{ id: "goods", label: "굿즈", icon: "🏭" },
-	{ id: "auction", label: "경매장", icon: "🔨" },
 	{ id: "market", label: "주식", icon: "📈" },
 	{ id: "season", label: "시즌", icon: "🏆" },
 	{ id: "shop", label: "상점", icon: "🛠" },

@@ -297,6 +297,24 @@ img {
 	}
 }
 
+.tab__dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 999px;
+	background: var(--accent-2);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-2) 25%, transparent);
+	animation: pulse 1.6s ease-in-out infinite;
+}
+.tab--on .tab__dot {
+	background: #fff;
+	box-shadow: none;
+}
+@keyframes pulse {
+	50% {
+		opacity: 0.35;
+	}
+}
+
 .tab--on {
 	background: linear-gradient(135deg, var(--accent), var(--accent-2));
 	border-color: transparent;
@@ -308,6 +326,10 @@ img {
 	overflow-y: auto;
 	padding: 0 12px 12px;
 	-webkit-overflow-scrolling: touch;
+	/* 한 화면에 판이 둘 이상 올 때(캐릭터 탭의 경매) 서로 붙지 않게 */
+	display: grid;
+	align-content: start;
+	gap: 10px;
 }
 
 .logbar {
@@ -1257,6 +1279,7 @@ button:focus-visible {
 }
 
 .row {
+	cursor: pointer;
 	display: grid;
 	grid-template-columns: auto 1fr auto;
 	grid-template-areas: "ava name price" "spark spark hold" "trade trade trade";
@@ -1298,6 +1321,12 @@ button:focus-visible {
 	display: grid;
 	font-size: 12px;
 	font-variant-numeric: tabular-nums;
+}
+.row--open {
+	border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.chev {
+	white-space: nowrap;
 }
 .row__trade {
 	grid-area: trade;

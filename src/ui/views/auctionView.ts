@@ -7,16 +7,18 @@ import { isRare, traitOf } from "../../game/traits";
 import { html, raw } from "../dom";
 import { ui } from "../uiState";
 
+/**
+ * 매물이 없을 때는 화면 한 칸을 통째로 비워 두지 않고 한 줄만 남긴다.
+ * 100초에 한 번 열리는 일이라, 없을 때 크게 알릴 이유가 없다.
+ */
 export function renderAuction(state: GameState): string {
 	const auction = state.auction;
 	if (!auction) {
 		return html`
-			<section class="panel empty-state">
-				<div class="big-emoji">🔨</div>
-				<h2>다음 경매 준비 중</h2>
-				<p class="muted">${clock(state.nextAuctionIn)} 후에 새 매물이 올라옵니다.</p>
-				<p class="hint">‘캐릭터’ 탭에서 내 캐릭터를 출품하면 바로 경매를 열 수 있어요.</p>
-			</section>
+			<div class="listbar">
+				<span class="muted small">🔨 다음 경매 매물 ${clock(state.nextAuctionIn)} 후</span>
+				<span class="muted small">내 캐릭터를 출품하면 바로 열려요</span>
+			</div>
 		`;
 	}
 

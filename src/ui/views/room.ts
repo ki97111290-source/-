@@ -6,7 +6,6 @@ import {
 	cheersPerSecond,
 	fameMultiplier,
 	fansPerSecond,
-	incomePerSecond,
 } from "../../game/economy";
 import { lineOf, lineRevenue } from "../../game/goods";
 import { slotCount } from "../../game/state";
@@ -33,7 +32,7 @@ export function renderRoom(state: GameState): string {
 		<section class="panel">
 			${raw(
 				stats([
-					{ label: "굿즈 매출", value: rate(incomePerSecond(state)) },
+					// 굿즈 매출은 헤더 지갑 밑에 이미 떠 있다. 같은 숫자를 두 번 그리지 않는다.
 					{ label: "팬심 상승", value: `💜 +${fmt(fansPerSecond(state))}/초` },
 					{ label: "응원 속도", value: `${cheersPerSecond(state).toFixed(1)}회/초` },
 					// 아직 안 올린 배수는 볼 이유가 없다

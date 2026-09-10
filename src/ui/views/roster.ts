@@ -5,6 +5,7 @@ import { appraise, ownedCharacters } from "../../game/characters";
 import { slotIncome } from "../../game/economy";
 import { isRare, traitOf } from "../../game/traits";
 import { html, raw } from "../dom";
+import { renderAuction } from "./auctionView";
 
 export function renderRoster(state: GameState): string {
 	const mine = ownedCharacters(state);
@@ -38,6 +39,7 @@ export function renderRoster(state: GameState): string {
 		.join("");
 
 	return html`
+		${raw(renderAuction(state))}
 		<section class="panel">
 			<header class="panel__head">
 				<div>
