@@ -124,7 +124,8 @@ export const UPGRADES: readonly UpgradeDef[] = [
 		baseCost: 15_000,
 		growth: 5,
 		maxLevel: 5,
-		desc: (l) => `응원석 ${1 + l}자리 · 채우면 룸 속도 +${Math.round(BALANCE.seatFillBonus * 100)}%씩`,
+		desc: (l) =>
+			`응원석 ${1 + l}자리 · 채우면 룸 속도 +${Math.round(BALANCE.seatFillBonus * 100)}%씩`,
 	},
 	{
 		id: "cheerPower",

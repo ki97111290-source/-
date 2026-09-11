@@ -162,6 +162,8 @@ function normalizeLine(line: GoodsLine): GoodsLine {
 		revenue: Number.isFinite(line.revenue) ? line.revenue : 0,
 		edition: line.edition ?? null,
 		auction: line.auction ?? null,
+		lastKit: line.lastKit ?? null,
+		lastFactor: Number.isFinite(line.lastFactor) ? line.lastFactor : 1,
 	};
 }
 
@@ -219,9 +221,11 @@ function migrate(raw: Partial<GameState>): GameState | null {
 	state.money = Number.isFinite(state.money) ? state.money : 0;
 	state.lastTick = Number.isFinite(state.lastTick) ? state.lastTick : Date.now();
 	syncSlots(state);
-	// 굿즈 도입 이전 세이브에는 라인이 없다. 그대로 두면 수입이 0이 되므로
-	// 응원석의 첫 캐릭터에게 라인을 하나 열어주고 시작한다.
 	pruneGoods(state);
-	openStarterLine(state);
+	// 굿즈 도입 이전 세이브에는 라인 자체가 없다. 그대로 두면 수입이 0이 되므로
+	// 응원석의 첫 캐릭터에게 하나 열어주고 시작한다.
+	// 빈 배열은 다른 뜻이다 — "직접 다 닫았다". 그때도 열어주면 라인을 닫고
+	// 새로고침하는 것만으로 개설비를 건너뛸 수 있다.
+	if (!Array.isArray(raw.goods)) openStarterLine(state);
 	return state;
 }

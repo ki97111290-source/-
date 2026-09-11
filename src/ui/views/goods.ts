@@ -10,6 +10,7 @@ import {
 	burstLabel,
 	editionRevenue,
 	goodsMultiplier,
+	kitCost,
 	kitOf,
 	kitUnlocked,
 	lineOf,
@@ -140,8 +141,9 @@ function lineCard(state: GameState, line: GoodsLine): string {
 				${raw(
 					auction
 						? auctionActions(line)
-						: html`<button class="btn btn--primary btn--sm" data-action="open-kit" data-id="${line.id}">
-								${edition && edition.stock > 0 ? "다시 찍기" : "한정판 찍기"}
+						: html`${raw(again(state, line))}
+							<button class="btn ${again(state, line) ? "btn--ghost" : "btn--primary"} btn--sm" data-action="open-kit" data-id="${line.id}">
+								${edition && edition.stock > 0 ? "다시 찍기" : again(state, line) ? "다른 키트로" : "한정판 찍기"}
 							</button>
 							${
 								edition && edition.stock > 0
@@ -154,6 +156,25 @@ function lineCard(state: GameState, line: GoodsLine): string {
 			</div>
 		</article>
 	`;
+}
+
+/**
+ * 재고가 빠진 줄에는 "지난번과 똑같이" 버튼을 하나 둔다.
+ * 여덟 줄을 매번 시트 열고 등급 고르고 가격 고르는 건 방치형에서 할 일이 아니다.
+ * 지난번 조건을 못 쓰는 상황(해금 해제·잔고 부족)이면 아예 안 그린다.
+ */
+function again(state: GameState, line: GoodsLine): string {
+	if (line.auction || (line.edition && line.edition.stock > 0)) return "";
+	if (!line.lastKit) return "";
+	const character = state.characters[line.characterId];
+	if (!character) return "";
+	const kit = kitOf(line.lastKit);
+	if (!kitUnlocked(state, kit)) return "";
+	const cost = kitCost(state, character, line, kit);
+	if (state.money < cost) return "";
+	return html`<button class="btn btn--primary btn--sm" data-action="reprint" data-id="${line.id}">
+		${kit.icon} 똑같이 다시 · ${won(cost)}
+	</button>`;
 }
 
 /** 한정판 재고 막대 */

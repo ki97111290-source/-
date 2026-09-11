@@ -354,6 +354,8 @@ export function releaseGoods(
 		edition: null,
 		auction: null,
 		revenue: 0,
+		lastKit: null,
+		lastFactor: 1,
 	});
 	pushLog(state, `${character.name}의 ‘${design.name}’ 판매를 시작했습니다.`, "good");
 	return { ok: true, message: `‘${design.name}’ 판매 시작` };
@@ -403,6 +405,9 @@ export function printEdition(
 	const salvage = salvageValue(line);
 	state.money -= cost;
 	if (salvage > 0) state.money += salvage;
+	// 완판 뒤 같은 판을 한 번에 다시 찍을 수 있도록 조건을 기억해 둔다
+	line.lastKit = kit.id;
+	line.lastFactor = priceFactor;
 
 	// 유일본은 1개뿐이라 흘려 팔 수 없다. 경매에 올리고 수집가를 기다린다.
 	if (kit.auctioned) {

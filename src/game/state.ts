@@ -136,6 +136,8 @@ export function openStarterLine(state: GameState, now: number = Date.now()): voi
 		edition: null,
 		auction: null,
 		revenue: 0,
+		lastKit: null,
+		lastFactor: 1,
 	});
 }
 

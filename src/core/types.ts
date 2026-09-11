@@ -118,6 +118,9 @@ export interface GoodsLine {
 	auction: GoodsAuction | null;
 	/** 이 라인이 지금까지 벌어들인 원 */
 	revenue: number;
+	/** 마지막으로 찍은 조건. 완판 뒤 같은 판을 한 번에 다시 찍으려고 기억해 둔다. */
+	lastKit: KitGrade | null;
+	lastFactor: number;
 }
 
 export type UpgradeId =

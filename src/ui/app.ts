@@ -558,6 +558,15 @@ function onClick(event: MouseEvent, engine: Engine): void {
 			break;
 		}
 
+		case "reprint": {
+			// 지난번과 같은 등급·가격으로 한 번에 다시 찍는다
+			const line = state.goods.find((l) => l.id === id);
+			if (!line?.lastKit) break;
+			const res = printEdition(state, line.id, line.lastKit, line.lastFactor);
+			toast(res.message, res.ok ? "good" : "bad");
+			break;
+		}
+
 		case "open-kit":
 			ui.kitSheet = snapshotKit(state, id, 1);
 			break;
