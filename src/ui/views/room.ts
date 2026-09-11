@@ -8,6 +8,7 @@ import {
 	fansPerSecond,
 } from "../../game/economy";
 import { lineOf, lineRevenue } from "../../game/goods";
+import { roomFillBonus } from "../../game/room";
 import { slotCount } from "../../game/state";
 import { traitOf } from "../../game/traits";
 import { html, raw } from "../dom";
@@ -35,6 +36,12 @@ export function renderRoom(state: GameState): string {
 					// 굿즈 매출은 헤더 지갑 밑에 이미 떠 있다. 같은 숫자를 두 번 그리지 않는다.
 					{ label: "팬심 상승", value: `💜 +${fmt(fansPerSecond(state))}/초` },
 					{ label: "응원 속도", value: `${cheersPerSecond(state).toFixed(1)}회/초` },
+					// 자리를 채울수록 붙는 보너스. 한 명만 앉아 있으면 ×1이라 보여줄 게 없다.
+					{
+						label: "자리 보너스",
+						value: `×${roomFillBonus(state).toFixed(2)}`,
+						show: roomFillBonus(state) > 1,
+					},
 					// 아직 안 올린 배수는 볼 이유가 없다
 					{
 						label: "응원 위력",
@@ -90,7 +97,7 @@ function emptySlot(index: number): string {
 		<article class="slot slot--empty">
 			<div class="slot__lock">＋</div>
 			<p class="muted">빈 응원석</p>
-			<p class="muted small">비어 있으면 그만큼 수입이 줄어요</p>
+			<p class="muted small">채우면 룸 전체 응원 속도 +${Math.round(BALANCE.seatFillBonus * 100)}%</p>
 			<button class="btn btn--sm" data-action="open-picker" data-slot="${index}">캐릭터 배치</button>
 		</article>
 	`;

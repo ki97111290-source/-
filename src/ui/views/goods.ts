@@ -21,7 +21,13 @@ import { html, raw } from "../dom";
 import { hint, stats, untilNextLocked } from "../parts";
 
 export function renderGoods(state: GameState): string {
-	const lines = state.goods.map((line) => lineCard(state, line)).join("");
+	// 손봐야 하는 줄을 위로. 여덟 줄이 되면 "재고가 빠져 멈춘 줄"을 찾는 게 일이 된다.
+	const sorted = [...state.goods].sort(
+		(a, b) => attentionRank(state, a) - attentionRank(state, b) || b.revenue - a.revenue,
+	);
+	const lines = sorted.map((line) => lineCard(state, line)).join("");
+	// 지금 눌러서 돈이 되는 줄만 센다. 응원석에서 빠진 줄까지 세면 늘 전부가 "손볼 줄"이 된다.
+	const waiting = state.goods.filter((line) => attentionRank(state, line) <= 1).length;
 	const idle = ownedCharacters(state).filter((c) => !lineOf(state, c.id)).length;
 	const full = state.goods.length >= BALANCE.maxGoodsLines;
 
@@ -49,7 +55,9 @@ export function renderGoods(state: GameState): string {
 			${raw(kitRack(state))}
 
 			<div class="panel__head">
-				<h2 class="section-title">판매 중인 굿즈</h2>
+				<h2 class="section-title">
+					판매 중인 굿즈${waiting > 0 ? ` · 다시 찍을 줄 ${waiting}개` : ""}
+				</h2>
 				<button class="btn btn--primary btn--sm" data-action="open-goods" ${full ? "disabled" : ""}>
 					${full ? "라인이 꽉 찼어요" : "＋ 굿즈 만들기"}
 				</button>
@@ -85,6 +93,20 @@ function kitRack(state: GameState): string {
 		<h2 class="section-title">제작 키트${hidden > 0 ? ` · 그 위로 ${hidden}종 더` : ""}</h2>
 		<div class="kits">${raw(rows)}</div>
 	`;
+}
+
+/**
+ * 지금 내 손이 필요한 순서. 낮을수록 위로 올라온다.
+ * 방치형에서 "할 일"은 대부분 재고가 빠져 멈춘 줄을 다시 찍는 것이다.
+ */
+function attentionRank(state: GameState, line: GoodsLine): number {
+	// 입찰이 들어온 유일본 경매 — 수락할지 말지 내가 정해야 한다
+	if (line.auction) return topBid(line.auction) ? 0 : 3;
+	// 재고가 없다 = 한정판 매출이 멈춰 있다
+	if (!line.edition || line.edition.stock <= 0) return 1;
+	// 응원석에서 빠져 인기도가 식는 중
+	if (!state.slots.includes(line.characterId)) return 2;
+	return 4;
 }
 
 function lineCard(state: GameState, line: GoodsLine): string {

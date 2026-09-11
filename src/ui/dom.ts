@@ -68,9 +68,23 @@ export function paint(container: HTMLElement, markup: string): void {
 	restoreFocus(container, snap);
 }
 
+/**
+ * 같은 그림은 다시 만들지 않는다.
+ * 화면은 초당 열 번 다시 그리는데 주가 이력은 4초에 한 번만 쌓이므로,
+ * 스물여섯 줄치 점 좌표를 매 프레임 새로 계산할 이유가 없다.
+ * (적정가 선은 계속 움직이지만, 유효숫자 네 자리면 화면에서 같은 자리다)
+ */
+const sparkCache = new WeakMap<number[], { key: string; svg: string }>();
+
 /** fair를 주면 적정가 위치에 점선을 그어 고평가/저평가가 눈에 보이게 한다. */
 export function sparkline(values: number[], color: string, fair?: number): string {
 	if (values.length < 2) return `<svg class="spark" viewBox="0 0 100 28" aria-hidden="true"></svg>`;
+
+	const key = `${values.length}|${values[values.length - 1]}|${color}|${
+		fair !== undefined && Number.isFinite(fair) ? fair.toPrecision(4) : ""
+	}`;
+	const hit = sparkCache.get(values);
+	if (hit && hit.key === key) return hit.svg;
 	const withFair = fair !== undefined && Number.isFinite(fair) ? [...values, fair] : values;
 	const min = Math.min(...withFair);
 	const max = Math.max(...withFair);
@@ -86,8 +100,10 @@ export function sparkline(values: number[], color: string, fair?: number): strin
 		fair !== undefined && Number.isFinite(fair)
 			? `<line x1="0" x2="100" y1="${(26 - ((fair - min) / span) * 24).toFixed(1)}" y2="${(26 - ((fair - min) / span) * 24).toFixed(1)}" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>`
 			: "";
-	return `<svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+	const svg = `<svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
 		${fairLine}
 		<polyline points="${points}" fill="none" stroke="${esc(color)}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 	</svg>`;
+	sparkCache.set(values, { key, svg });
+	return svg;
 }

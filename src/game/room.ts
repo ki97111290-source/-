@@ -29,9 +29,19 @@ export function cheerMultiplier(state: GameState): number {
 	return 1 + upgradeLevel(state, "cheerPower") * 0.5;
 }
 
+/**
+ * 응원석이 찰수록 룸 전체가 빨라진다 (한 명 기준 ×1, 두 명째부터 자리당 +25%).
+ * 응원은 앉은 사람끼리 나눠 갖는 구조라, 이 보너스가 없으면 자리를 늘리는 것이
+ * 순수한 손해가 된다.
+ */
+export function roomFillBonus(state: GameState): number {
+	return 1 + BALANCE.seatFillBonus * Math.max(0, occupiedSlots(state).length - 1);
+}
+
 /** 룸 전체의 초당 응원 횟수. 업그레이드 없이도 기본값만큼 돌아간다. */
 export function cheersPerSecond(state: GameState): number {
-	return BALANCE.baseCheerRate + upgradeLevel(state, "autoCheer") * BALANCE.cheerRatePerLevel;
+	const base = BALANCE.baseCheerRate + upgradeLevel(state, "autoCheer") * BALANCE.cheerRatePerLevel;
+	return base * roomFillBonus(state);
 }
 
 /** 캐릭터 한 명이 초당 받는 응원 횟수 */

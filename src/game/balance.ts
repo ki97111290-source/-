@@ -46,6 +46,13 @@ export const BALANCE = {
 	baseCheerRate: 1,
 	/** 응원 속도 업그레이드 레벨당 추가 회/초 */
 	cheerRatePerLevel: 1.2,
+	/**
+	 * 응원석을 하나 더 채울 때마다 룸 전체 응원 속도에 붙는 보너스.
+	 * 응원은 앉은 사람 수로 나눠 갖기 때문에, 이 보너스가 없으면
+	 * 자리를 늘릴수록 한 명당 응원이 줄어 팬심도 수입도 떨어진다 —
+	 * 상점의 첫 업그레이드가 함정이 되어버린다.
+	 */
+	seatFillBonus: 0.3,
 	/** 명성 1점당 전체 수입 보너스 */
 	famePerPoint: 0.03,
 	/** 인기도 자연 감소(초당 비율) */
@@ -117,7 +124,7 @@ export const UPGRADES: readonly UpgradeDef[] = [
 		baseCost: 15_000,
 		growth: 5,
 		maxLevel: 5,
-		desc: (l) => `응원석 ${1 + l}자리`,
+		desc: (l) => `응원석 ${1 + l}자리 · 채우면 룸 속도 +${Math.round(BALANCE.seatFillBonus * 100)}%씩`,
 	},
 	{
 		id: "cheerPower",

@@ -3,6 +3,7 @@ import { remainingLabel, seasonWeekOf, weekUnlockInOf } from "../../core/season"
 import type { GameState } from "../../core/types";
 import { ACHIEVEMENTS } from "../../game/achievements";
 import { TIER_NAMES, UPGRADES, type UpgradeTier, upgradeCost } from "../../game/balance";
+import { ownedCharacters } from "../../game/characters";
 import { fameMultiplier } from "../../game/economy";
 import { upgradeLevel } from "../../game/state";
 import { html, raw } from "../dom";
@@ -34,6 +35,17 @@ export function renderShop(state: GameState): string {
 
 		</section>
 	`;
+}
+
+/**
+ * 지금 사면 헛돈이 되는 업그레이드에만 한 줄 붙인다.
+ * 자리를 늘려도 앉힐 캐릭터가 없으면 빈 자리는 아무것도 하지 않는다.
+ */
+function warnFor(state: GameState, id: string, level: number): string {
+	if (id !== "slot") return "";
+	const owned = ownedCharacters(state).length;
+	if (owned > level + 1) return "";
+	return html`<p class="err small">앉힐 캐릭터가 ${owned}명뿐이라 늘린 자리는 비어 있게 돼요 — 경매장에서 먼저 데려오세요.</p>`;
 }
 
 function weekSummary(week: number): string {
@@ -74,6 +86,7 @@ function tierBlock(state: GameState, tier: UpgradeTier, week: number): string {
 					<h3>${def.name} <span class="muted">Lv.${level}/${def.maxLevel}</span></h3>
 					<p class="muted">${def.desc(level)}</p>
 					${raw(maxed ? "" : html`<p class="muted small">다음: ${def.desc(level + 1)}</p>`)}
+					${raw(warnFor(state, def.id, level))}
 				</div>
 				<button
 					class="btn ${can ? "btn--primary" : ""}"
