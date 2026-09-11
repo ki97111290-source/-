@@ -1,7 +1,7 @@
 import type { Character, GameState } from "../core/types";
 import { BALANCE } from "./balance";
 import { goodsRevenue, tickGoods } from "./goods";
-import { cheerMultiplier, cheersPerSecond, cheersPerSlot, occupiedSlots } from "./room";
+import { cheerMultiplier, cheersPerSlot, occupiedSlots } from "./room";
 import { upgradeLevel } from "./state";
 import { traitOf } from "./traits";
 
@@ -125,6 +125,12 @@ export function tickEconomy(state: GameState, dt: number): void {
 	}
 }
 
+/**
+ * 오프라인 정산을 쪼개는 단위(초). 한 번에 몰아서 계산하면 감쇠·성장이 어긋나고,
+ * 너무 잘게 쪼개면 8시간치가 수만 번 돈다. 10초면 8시간이 천 번 남짓이다.
+ */
+const OFFLINE_STEP = 10;
+
 export interface OfflineReport {
 	seconds: number;
 	/** 그동안 벌어들인 원 */
@@ -142,23 +148,23 @@ export function applyOffline(state: GameState, now = Date.now()): OfflineReport 
 	const capped = elapsed > BALANCE.offlineCap;
 	const seconds = Math.min(elapsed, BALANCE.offlineCap);
 	const efficiency = offlineEfficiency(state);
-	// 굿즈 정산 경로를 그대로 쓴다. 그래야 닫아둔 동안 팔린 만큼 재고도 줄어든다.
-	const money = tickGoods(state, seconds * efficiency);
 
-	addMoney(state, money);
-	// 닫아둔 동안에도 응원 횟수는 같은 효율로 쌓인다. 트로피 진행이 완전히 멈추면
-	// "켜두면 되는 게임"이 "24시간 켜둬야 하는 게임"이 되어버린다.
-	const offlineCheers = cheersPerSecond(state) * seconds * efficiency;
-	state.totalCheers += offlineCheers;
-	state.seasonCheers += offlineCheers;
-	state.seasonFans += fansPerSecond(state) * seconds * efficiency;
-
-	// 다만 인기도는 오르지 않는다. 오랫동안 응원이 끊기면 오히려 식는다.
-	for (const character of Object.values(state.characters)) {
-		const decay = BALANCE.popularityDecay * traitOf(character).decay * seconds * 0.5;
-		character.popularity = Math.max(0.5, character.popularity * (1 - decay));
-		character.hype *= 1 - Math.min(0.95, BALANCE.hypeDecay * seconds);
+	/**
+	 * 닫아둔 시간을 "효율만큼 느리게 돌아간 시간"으로 보고 평소 루프를 그대로 돌린다.
+	 *
+	 * 예전에는 감쇠를 한 번에 몰아서 곱했는데(`인기도 × (1 − 감쇠율 × 경과초)`),
+	 * 37분이 넘으면 괄호 안이 음수가 되어 **모든 캐릭터 인기도가 0.5로 무너졌다.**
+	 * 40분만 닫아둬도 인기도 1216 → 0.5, 수입 466/초 → 44/초.
+	 * 게다가 응원 횟수와 팬심은 쌓아주면서 그 응원이 인기도에는 반영되지 않아
+	 * 앞뒤도 맞지 않았다. 나눠서 돌리면 응원·감쇠·굿즈 재고가 한 규칙으로 정리된다.
+	 */
+	const before = state.money;
+	const total = seconds * efficiency;
+	for (let left = total; left > 0; left -= OFFLINE_STEP) {
+		tickEconomy(state, Math.min(OFFLINE_STEP, left));
 	}
+	const money = state.money - before;
+
 	state.lastTick = now;
 	return { seconds, money, capped };
 }

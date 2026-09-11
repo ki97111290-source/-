@@ -9,7 +9,7 @@ import { createNewGame, pushLog } from "./game/state";
 import "./styles.css";
 import { mountApp } from "./ui/app";
 import { initTheme } from "./ui/theme";
-import { ui } from "./ui/uiState";
+import { toast, ui } from "./ui/uiState";
 
 // 화면이 그려지기 전에 테마를 정해야 깜빡임이 없다
 initTheme();
@@ -23,13 +23,13 @@ if (!fresh) {
 	// 오프라인 수입을 먼저 정산해야 그 응원까지 지난 시즌 성적에 들어간다.
 	const report = applyOffline(state);
 	if (report && report.money >= 1) {
-		pushLog(
-			state,
-			`자리를 비운 ${duration(report.seconds)} 동안 ${won(report.money)}이 쌓였어요.${
-				report.capped ? " (최대 8시간까지 인정)" : ""
-			}`,
-			"good",
-		);
+		const summary = `자리를 비운 ${duration(report.seconds)} 동안 ${won(report.money)}이 쌓였어요.${
+			report.capped ? " (최대 8시간까지 인정)" : ""
+		}`;
+		pushLog(state, summary, "good");
+		// 소식줄은 두 줄뿐이라 1~2초면 다른 소식에 밀려난다.
+		// 방치형에서 제일 보고 싶은 한 줄이므로 토스트로 한 번 더, 길게 띄운다.
+		toast(summary, "good", 7000);
 	}
 }
 

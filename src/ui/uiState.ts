@@ -143,8 +143,8 @@ export const ui: UiState = {
 	seasonReport: null,
 };
 
-export function toast(text: string, kind: Toast["kind"] = "info"): void {
-	ui.toast = { text, kind, until: Date.now() + 2600 };
+export function toast(text: string, kind: Toast["kind"] = "info", ms = 2600): void {
+	ui.toast = { text, kind, until: Date.now() + ms };
 }
 
 export function closeModals(): void {
