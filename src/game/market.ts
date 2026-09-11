@@ -155,9 +155,12 @@ function tickDividend(state: GameState, dt: number): void {
 		if (!character || holding.shares <= 0) continue;
 		// 인기가 식은 캐릭터는 배당도 줄어든다.
 		const health = Math.min(1.5, 0.4 + character.popularity / 60);
+		// 배당은 **넣은 돈(평단가)** 기준이다. 현재 주가에 걸면 인기도가 오를 때마다
+		// 배당까지 같이 뛰어서, 응원하는 캐릭터 주식을 사두는 것만으로 굿즈의 수십 배를
+		// 벌게 된다(재보니 7일에 굿즈 재투자의 44배). 주가 상승은 팔 때 차익으로 먹는다.
 		total +=
 			holding.shares *
-			character.price *
+			holding.avgCost *
 			BALANCE.dividendRate *
 			health *
 			traitOf(character).dividend;

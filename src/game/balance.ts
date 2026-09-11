@@ -66,7 +66,7 @@ export const BALANCE = {
 	/** 배당 주기(초) */
 	dividendPeriod: 90,
 	/** 배당률: 주가 * 이 비율 */
-	dividendRate: 0.012,
+	dividendRate: 0.003,
 	/** 4주차(결산 주간) 배당 배수 */
 	finalWeekDividend: 1.5,
 	/** 경매 등장 주기(초) */
