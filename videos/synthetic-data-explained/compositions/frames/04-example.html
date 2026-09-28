@@ -1,0 +1,75 @@
+<template>
+  <script src="assets/vendor/gsap.min.js"></script>
+  <style>
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:block;}
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:block;}
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:block;}
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-ExtraBold.woff2") format("woff2");font-weight:800;font-style:normal;font-display:block;}
+#root{position:absolute;inset:0;container-type:size;font-family:"Pretendard",sans-serif;color:#111111;overflow:hidden;word-break:keep-all;}
+.f04-bg{position:absolute;inset:0;background:#fdfae7;}
+.f04-stage{position:absolute;left:0;top:0;width:100%;height:83%;padding:12cqw 8cqw 0 8cqw;display:flex;flex-direction:column;}
+.f04-eyebrow{font-weight:700;font-size:3.4cqw;letter-spacing:0.08em;color:#1e2bfa;display:flex;align-items:center;gap:2.4cqw;}
+.f04-eyebrow::before{content:"";display:block;width:8cqw;height:0.6cqw;border-radius:0.3cqw;background:#1e2bfa;}
+.f04-card{background:rgba(30,43,250,0.04);border:1.5px solid rgba(30,43,250,0.2);border-radius:14px;}
+[data-composition-id="04-example"] .ln{display:block;}
+.f04-progress{position:absolute;left:0;bottom:0;height:0.5cqw;background:#1e2bfa;}
+
+.f04-h{margin-top:5cqw;font-weight:800;font-size:7.6cqw;line-height:1.2;letter-spacing:-0.02em;}
+.f04-grid{margin-top:7cqw;padding:4cqw;display:grid;grid-template-columns:repeat(4,1fr);gap:3cqw;}
+.f04-cell{aspect-ratio:12/7;}
+.f04-cell svg{width:100%;height:100%;display:block;}
+.f04-lbl{grid-column:1/-1;font-size:4cqw;font-weight:700;color:#6b6b6b;}
+.f04-lbl b{color:#111111;}
+.f04-mid{display:flex;align-items:center;justify-content:center;gap:3cqw;margin:3.5cqw 0;}
+.f04-arrow{width:10cqw;height:10cqw;}
+.f04-ai{padding:2.2cqw 5cqw;border-radius:100px;background:#1e2bfa;color:#fdfae7;font-size:4.6cqw;font-weight:700;}
+.f04-new{padding:4.5cqw 6cqw;display:flex;align-items:center;gap:5cqw;border:3px dashed #1e2bfa;background:rgba(30,43,250,0.08);}
+.f04-newcar{flex:none;width:36cqw;}
+.f04-newcar svg{width:100%;display:block;}
+.f04-nt{font-size:6.2cqw;font-weight:800;line-height:1.25;}
+.f04-nt em{font-style:normal;color:#1e2bfa;}
+.f04-chip{align-self:flex-start;margin-top:4cqw;padding:3cqw 6cqw;border-radius:100px;border:2px solid #1e2bfa;color:#1e2bfa;font-size:4.8cqw;font-weight:700;}
+
+  </style>
+  <div id="root" data-composition-id="04-example" data-width="1080" data-height="1920" data-duration="6.5">
+    <div id="f04-bg" class="clip f04-bg" data-start="0" data-duration="6.5" data-track-index="0"></div>
+    <div id="f04-layer" class="clip f04-layer" style="position:absolute;inset:0" data-start="0" data-duration="6.5" data-track-index="1">
+      <div class="f04-stage">
+        <div class="f04-eyebrow" id="f04-eyebrow">EXAMPLE</div>
+        <div class="f04-h" id="f04-h">자동차 사진으로 예를 들면</div>
+        <div class="f04-card f04-grid" id="f04-grid">
+          <div class="f04-cell"><svg viewBox="0 0 120 70"><path d="M8 50 V40 Q8 34 16 32 L32 28 L46 14 Q50 10 58 10 H80 Q88 10 92 16 L102 30 Q112 32 112 42 V50 Z" fill="rgba(17,17,17,0.06)" stroke="#111111" stroke-width="5" stroke-linejoin="round" /><path d="M50 16 H78 L88 28 H40 Z" fill="rgba(255,255,255,0.5)" stroke="#111111" stroke-width="3" stroke-linejoin="round"/><circle cx="32" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/><circle cx="88" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/></svg></div><div class="f04-cell"><svg viewBox="0 0 120 70"><path d="M8 50 V40 Q8 34 16 32 L32 28 L46 14 Q50 10 58 10 H80 Q88 10 92 16 L102 30 Q112 32 112 42 V50 Z" fill="rgba(17,17,17,0.06)" stroke="#111111" stroke-width="5" stroke-linejoin="round" /><path d="M50 16 H78 L88 28 H40 Z" fill="rgba(255,255,255,0.5)" stroke="#111111" stroke-width="3" stroke-linejoin="round"/><circle cx="32" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/><circle cx="88" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/></svg></div><div class="f04-cell"><svg viewBox="0 0 120 70"><path d="M8 50 V40 Q8 34 16 32 L32 28 L46 14 Q50 10 58 10 H80 Q88 10 92 16 L102 30 Q112 32 112 42 V50 Z" fill="rgba(17,17,17,0.06)" stroke="#111111" stroke-width="5" stroke-linejoin="round" /><path d="M50 16 H78 L88 28 H40 Z" fill="rgba(255,255,255,0.5)" stroke="#111111" stroke-width="3" stroke-linejoin="round"/><circle cx="32" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/><circle cx="88" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/></svg></div><div class="f04-cell"><svg viewBox="0 0 120 70"><path d="M8 50 V40 Q8 34 16 32 L32 28 L46 14 Q50 10 58 10 H80 Q88 10 92 16 L102 30 Q112 32 112 42 V50 Z" fill="rgba(17,17,17,0.06)" stroke="#111111" stroke-width="5" stroke-linejoin="round" /><path d="M50 16 H78 L88 28 H40 Z" fill="rgba(255,255,255,0.5)" stroke="#111111" stroke-width="3" stroke-linejoin="round"/><circle cx="32" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/><circle cx="88" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/></svg></div><div class="f04-cell"><svg viewBox="0 0 120 70"><path d="M8 50 V40 Q8 34 16 32 L32 28 L46 14 Q50 10 58 10 H80 Q88 10 92 16 L102 30 Q112 32 112 42 V50 Z" fill="rgba(17,17,17,0.06)" stroke="#111111" stroke-width="5" stroke-linejoin="round" /><path d="M50 16 H78 L88 28 H40 Z" fill="rgba(255,255,255,0.5)" stroke="#111111" stroke-width="3" stroke-linejoin="round"/><circle cx="32" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/><circle cx="88" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/></svg></div><div class="f04-cell"><svg viewBox="0 0 120 70"><path d="M8 50 V40 Q8 34 16 32 L32 28 L46 14 Q50 10 58 10 H80 Q88 10 92 16 L102 30 Q112 32 112 42 V50 Z" fill="rgba(17,17,17,0.06)" stroke="#111111" stroke-width="5" stroke-linejoin="round" /><path d="M50 16 H78 L88 28 H40 Z" fill="rgba(255,255,255,0.5)" stroke="#111111" stroke-width="3" stroke-linejoin="round"/><circle cx="32" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/><circle cx="88" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/></svg></div><div class="f04-cell"><svg viewBox="0 0 120 70"><path d="M8 50 V40 Q8 34 16 32 L32 28 L46 14 Q50 10 58 10 H80 Q88 10 92 16 L102 30 Q112 32 112 42 V50 Z" fill="rgba(17,17,17,0.06)" stroke="#111111" stroke-width="5" stroke-linejoin="round" /><path d="M50 16 H78 L88 28 H40 Z" fill="rgba(255,255,255,0.5)" stroke="#111111" stroke-width="3" stroke-linejoin="round"/><circle cx="32" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/><circle cx="88" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/></svg></div><div class="f04-cell"><svg viewBox="0 0 120 70"><path d="M8 50 V40 Q8 34 16 32 L32 28 L46 14 Q50 10 58 10 H80 Q88 10 92 16 L102 30 Q112 32 112 42 V50 Z" fill="rgba(17,17,17,0.06)" stroke="#111111" stroke-width="5" stroke-linejoin="round" /><path d="M50 16 H78 L88 28 H40 Z" fill="rgba(255,255,255,0.5)" stroke="#111111" stroke-width="3" stroke-linejoin="round"/><circle cx="32" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/><circle cx="88" cy="52" r="10" fill="#fdfae7" stroke="#111111" stroke-width="5"/></svg></div>
+          <div class="f04-lbl" id="f04-lbl">실제 사진 <b>× 수만 장</b></div>
+        </div>
+        <div class="f04-mid" id="f04-mid">
+          <svg class="f04-arrow" viewBox="0 0 100 100"><path d="M50 10v70M25 55l25 25 25-25" fill="none" stroke="#1e2bfa" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="f04-ai">AI 학습</div>
+        </div>
+        <div class="f04-card f04-new" id="f04-new">
+          <div class="f04-newcar"><svg viewBox="0 0 120 70"><path d="M8 50 V40 Q8 34 16 32 L32 28 L46 14 Q50 10 58 10 H80 Q88 10 92 16 L102 30 Q112 32 112 42 V50 Z" fill="rgba(30,43,250,0.08)" stroke="#1e2bfa" stroke-width="6" stroke-linejoin="round" /><path d="M50 16 H78 L88 28 H40 Z" fill="rgba(255,255,255,0.5)" stroke="#1e2bfa" stroke-width="3.5999999999999996" stroke-linejoin="round"/><circle cx="32" cy="52" r="10" fill="#fdfae7" stroke="#1e2bfa" stroke-width="6"/><circle cx="88" cy="52" r="10" fill="#fdfae7" stroke="#1e2bfa" stroke-width="6"/></svg></div>
+          <div class="f04-nt"><span class="ln">현실에 없는</span><span class="ln"><em>새 자동차</em></span></div>
+        </div>
+        <div class="f04-chip" id="f04-chip">→ AI 학습용 데이터로 활용</div>
+      </div>
+      <div class="f04-progress" id="f04-progress"></div>
+    </div>
+  </div>
+  <script>
+    (function(){
+      const tl = gsap.timeline({ paused: true });
+      const q = (s) => document.querySelectorAll('[data-composition-id="04-example"] ' + s);
+      const one = (s) => document.querySelector('[data-composition-id="04-example"] ' + s);
+      tl.fromTo(q("#f04-eyebrow"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.1);
+      tl.fromTo(q("#f04-h"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.3);
+      tl.fromTo(one("#f04-grid"), { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0.5);
+      tl.fromTo(q(".f04-cell"), { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)", stagger: 0.1 }, 0.6);
+      tl.fromTo(q("#f04-lbl"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.4);
+      tl.fromTo(q("#f04-mid"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.9);
+      tl.fromTo(one("#f04-new"), { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.7, ease: "back.out(1.5)" }, 3.0);
+      tl.fromTo(one(".f04-newcar"), { x: -60 }, { x: 0, duration: 0.9, ease: "power3.out" }, 3.1);
+      tl.fromTo(one("#f04-chip"), { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 4.6);
+      tl.fromTo(one("#f04-progress"), { width: "56%" }, { width: "80%", duration: 6, ease: "none" }, 0);
+      window.__timelines["04-example"] = tl;
+    })();
+  </script>
+</template>

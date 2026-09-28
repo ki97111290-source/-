@@ -1,0 +1,70 @@
+<template>
+  <script src="assets/vendor/gsap.min.js"></script>
+  <style>
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:block;}
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:block;}
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:block;}
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-ExtraBold.woff2") format("woff2");font-weight:800;font-style:normal;font-display:block;}
+#root{position:absolute;inset:0;container-type:size;font-family:"Pretendard",sans-serif;color:#111111;overflow:hidden;word-break:keep-all;}
+.f02-bg{position:absolute;inset:0;background:#fdfae7;}
+.f02-stage{position:absolute;left:0;top:0;width:100%;height:83%;padding:12cqw 8cqw 0 8cqw;display:flex;flex-direction:column;}
+.f02-eyebrow{font-weight:700;font-size:3.4cqw;letter-spacing:0.08em;color:#1e2bfa;display:flex;align-items:center;gap:2.4cqw;}
+.f02-eyebrow::before{content:"";display:block;width:8cqw;height:0.6cqw;border-radius:0.3cqw;background:#1e2bfa;}
+.f02-card{background:rgba(30,43,250,0.04);border:1.5px solid rgba(30,43,250,0.2);border-radius:14px;}
+[data-composition-id="02-definition"] .ln{display:block;}
+.f02-progress{position:absolute;left:0;bottom:0;height:0.5cqw;background:#1e2bfa;}
+
+.f02-h{margin-top:5cqw;font-weight:800;font-size:9.4cqw;line-height:1.2;letter-spacing:-0.02em;}
+.f02-h em{font-style:normal;color:#1e2bfa;}
+.f02-flow{margin-top:9cqw;display:flex;flex-direction:column;align-items:center;}
+.f02-box{width:100%;padding:5cqw 6cqw;display:flex;align-items:center;gap:4cqw;}
+.f02-box .f02-lbl{font-size:3.4cqw;font-weight:600;color:#6b6b6b;}
+.f02-box .f02-val{font-size:6.6cqw;font-weight:800;}
+.f02-ico{flex:none;width:14cqw;height:14cqw;}
+.f02-line{width:0.6cqw;height:10cqw;background:#1e2bfa;transform-origin:top center;}
+.f02-node{width:30cqw;height:30cqw;border-radius:50%;background:#1e2bfa;color:#fdfae7;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:6.4cqw;line-height:1.2;text-align:center;}
+.f02-node small{font-size:3.6cqw;font-weight:600;opacity:0.85;}
+.f02-new{border:3px solid #1e2bfa;background:rgba(30,43,250,0.08);}
+.f02-new .f02-val{color:#1e2bfa;}
+
+  </style>
+  <div id="root" data-composition-id="02-definition" data-width="1080" data-height="1920" data-duration="5.5">
+    <div id="f02-bg" class="clip f02-bg" data-start="0" data-duration="5.5" data-track-index="0"></div>
+    <div id="f02-layer" class="clip f02-layer" style="position:absolute;inset:0" data-start="0" data-duration="5.5" data-track-index="1">
+      <div class="f02-stage">
+        <div class="f02-eyebrow" id="f02-eyebrow">DEFINITION</div>
+        <div class="f02-h" id="f02-h"><span class="ln">실제 데이터로</span><span class="ln">만든 <em>가상의 데이터</em></span></div>
+        <div class="f02-flow">
+          <div class="f02-card f02-box" id="f02-real">
+            <svg class="f02-ico" viewBox="0 0 100 100"><rect x="14" y="14" width="72" height="72" rx="10" fill="none" stroke="#111111" stroke-width="6"/><path d="M14 38h72M38 38v48" stroke="#111111" stroke-width="6"/></svg>
+            <div><div class="f02-lbl">원본</div><div class="f02-val">실제 데이터</div></div>
+          </div>
+          <div class="f02-line" id="f02-l1"></div>
+          <div class="f02-node" id="f02-node">AI<small>알고리즘</small></div>
+          <div class="f02-line" id="f02-l2"></div>
+          <div class="f02-card f02-box f02-new" id="f02-new">
+            <svg class="f02-ico" viewBox="0 0 100 100"><rect x="14" y="14" width="72" height="72" rx="10" fill="none" stroke="#1e2bfa" stroke-width="6" stroke-dasharray="12 8"/><path d="M50 30l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#1e2bfa"/></svg>
+            <div><div class="f02-lbl">생성</div><div class="f02-val">새로운 가상 데이터</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="f02-progress" id="f02-progress"></div>
+    </div>
+  </div>
+  <script>
+    (function(){
+      const tl = gsap.timeline({ paused: true });
+      const q = (s) => document.querySelectorAll('[data-composition-id="02-definition"] ' + s);
+      const one = (s) => document.querySelector('[data-composition-id="02-definition"] ' + s);
+      tl.fromTo(q("#f02-eyebrow"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.1);
+      tl.fromTo(q("#f02-h"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.3);
+      tl.fromTo(q("#f02-real"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.8);
+      tl.fromTo(one("#f02-l1"), { scaleY: 0 }, { scaleY: 1, duration: 0.5, ease: "power2.inOut" }, 1.3);
+      tl.fromTo(one("#f02-node"), { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)" }, 1.8);
+      tl.fromTo(one("#f02-l2"), { scaleY: 0 }, { scaleY: 1, duration: 0.5, ease: "power2.inOut" }, 2.6);
+      tl.fromTo(one("#f02-new"), { opacity: 0, y: 40, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "power3.out" }, 3.1);
+      tl.fromTo(one("#f02-progress"), { width: "16%" }, { width: "36%", duration: 5, ease: "none" }, 0);
+      window.__timelines["02-definition"] = tl;
+    })();
+  </script>
+</template>
