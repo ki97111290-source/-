@@ -1,0 +1,78 @@
+<template>
+  <script src="assets/vendor/gsap.min.js"></script>
+  <style>
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:block;}
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:block;}
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:block;}
+@font-face{font-family:"Pretendard";src:url("assets/fonts/Pretendard-ExtraBold.woff2") format("woff2");font-weight:800;font-style:normal;font-display:block;}
+#root{position:absolute;inset:0;container-type:size;font-family:"Pretendard",sans-serif;color:#111111;overflow:hidden;word-break:keep-all;}
+.f03-bg{position:absolute;inset:0;background:#fdfae7;}
+.f03-stage{position:absolute;left:0;top:0;width:100%;height:83%;padding:12cqw 8cqw 0 8cqw;display:flex;flex-direction:column;}
+.f03-eyebrow{font-weight:700;font-size:3.4cqw;letter-spacing:0.08em;color:#1e2bfa;display:flex;align-items:center;gap:2.4cqw;}
+.f03-eyebrow::before{content:"";display:block;width:8cqw;height:0.6cqw;border-radius:0.3cqw;background:#1e2bfa;}
+.f03-card{background:rgba(30,43,250,0.04);border:1.5px solid rgba(30,43,250,0.2);border-radius:14px;}
+[data-composition-id="03-learn"] .ln{display:block;}
+.f03-progress{position:absolute;left:0;bottom:0;height:0.5cqw;background:#1e2bfa;}
+
+.f03-h{margin-top:5cqw;font-weight:800;font-size:9.4cqw;line-height:1.2;letter-spacing:-0.02em;}
+.f03-h em{font-style:normal;color:#1e2bfa;}
+.f03-col{margin-top:9cqw;display:flex;flex-direction:column;gap:5cqw;}
+.f03-row{padding:5.5cqw 6cqw;display:flex;align-items:center;justify-content:space-between;gap:4cqw;}
+.f03-t{font-size:7cqw;font-weight:800;}
+.f03-s{font-size:3.6cqw;font-weight:600;color:#6b6b6b;margin-top:1cqw;}
+.f03-mark{flex:none;width:13cqw;height:13cqw;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.f03-copy{opacity:1;}
+.f03-copy .f03-t{color:#7e7e7e;position:relative;}
+.f03-strike{position:absolute;left:0;top:52%;height:0.7cqw;width:100%;background:#dc2626;transform-origin:left center;}
+.f03-x{background:rgba(220,38,38,0.1);}
+.f03-ok{background:#1e2bfa;}
+.f03-learn{border:3px solid #1e2bfa;background:rgba(30,43,250,0.08);flex-direction:column;align-items:stretch;}
+.f03-top{display:flex;align-items:center;justify-content:space-between;gap:4cqw;}
+.f03-wave{overflow:visible;width:100%;height:18cqw;margin-top:3cqw;}
+.f03-chip{align-self:flex-start;margin-top:2cqw;padding:3cqw 6cqw;border-radius:100px;background:#1e2bfa;color:#fdfae7;font-size:5.4cqw;font-weight:700;}
+
+  </style>
+  <div id="root" data-composition-id="03-learn" data-width="1080" data-height="1920" data-duration="5.5">
+    <div id="f03-bg" class="clip f03-bg" data-start="0" data-duration="5.5" data-track-index="0"></div>
+    <div id="f03-layer" class="clip f03-layer" style="position:absolute;inset:0" data-start="0" data-duration="5.5" data-track-index="1">
+      <div class="f03-stage">
+        <div class="f03-eyebrow" id="f03-eyebrow">HOW IT WORKS</div>
+        <div class="f03-h" id="f03-h"><span class="ln">복제가 아니라</span><span class="ln"><em>패턴을 학습</em></span></div>
+        <div class="f03-col">
+          <div class="f03-card f03-row f03-copy" id="f03-copy">
+            <div><div class="f03-t">그대로 복제<span class="f03-strike" id="f03-strike"></span></div><div class="f03-s">원본을 베끼지 않아요</div></div>
+            <div class="f03-mark f03-x" id="f03-x"><svg viewBox="0 0 100 100" width="60%" height="60%"><path d="M25 25l50 50M75 25l-50 50" stroke="#dc2626" stroke-width="12" stroke-linecap="round"/></svg></div>
+          </div>
+          <div class="f03-card f03-row f03-learn" id="f03-learn">
+            <div class="f03-top">
+              <div><div class="f03-t">특징·패턴 학습</div><div class="f03-s">데이터 속 규칙을 익혀요</div></div>
+              <div class="f03-mark f03-ok" id="f03-ok"><svg viewBox="0 0 100 100" width="60%" height="60%"><path d="M22 52l18 18 38-40" fill="none" stroke="#fdfae7" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <svg class="f03-wave" viewBox="0 0 600 160" preserveAspectRatio="none"><path id="f03-path" d="M0 110 C60 20 120 20 180 90 S300 150 360 70 S480 10 600 60" fill="none" stroke="#1e2bfa" stroke-width="8" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/><circle class="f03-pt" cx="0" cy="110" r="12" fill="#1e2bfa"/><circle class="f03-pt" cx="180" cy="90" r="12" fill="#1e2bfa"/><circle class="f03-pt" cx="360" cy="70" r="12" fill="#1e2bfa"/><circle class="f03-pt" cx="600" cy="60" r="12" fill="#1e2bfa"/></svg>
+          </div>
+          <div class="f03-chip" id="f03-chip">→ 새로운 데이터 생성</div>
+        </div>
+      </div>
+      <div class="f03-progress" id="f03-progress"></div>
+    </div>
+  </div>
+  <script>
+    (function(){
+      const tl = gsap.timeline({ paused: true });
+      const q = (s) => document.querySelectorAll('[data-composition-id="03-learn"] ' + s);
+      const one = (s) => document.querySelector('[data-composition-id="03-learn"] ' + s);
+      tl.fromTo(q("#f03-eyebrow"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.1);
+      tl.fromTo(q("#f03-h"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.3);
+      tl.fromTo(q("#f03-copy"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.8);
+      tl.fromTo(one("#f03-strike"), { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power2.out" }, 1.3);
+      tl.fromTo(one("#f03-x"), { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 1.4);
+      tl.fromTo(q("#f03-learn"), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.8);
+      tl.fromTo(one("#f03-path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.2, ease: "power1.inOut" }, 2.2);
+      tl.fromTo(q(".f03-pt"), { opacity: 0, scale: 0, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)", stagger: 0.3 }, 2.2);
+      tl.fromTo(one("#f03-ok"), { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 2.9);
+      tl.fromTo(one("#f03-chip"), { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 3.6);
+      tl.fromTo(one("#f03-progress"), { width: "36%" }, { width: "56%", duration: 5, ease: "none" }, 0);
+      window.__timelines["03-learn"] = tl;
+    })();
+  </script>
+</template>
