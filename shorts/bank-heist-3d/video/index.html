@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Pretendard"; font-weight: 900; src: url("assets/fonts/Pretendard-Black.woff2") format("woff2"); }
+      :root { --red: #e3262d; --gold: #f4c542; --ink: #ffffff; --font: "Pretendard", sans-serif; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #9cc6ea; }
+      #root { position: relative; width: 100%; height: 100%; font-family: var(--font); overflow: hidden; }
+      #stage { position: absolute; inset: 0; width: 1080px; height: 1920px; display: block; }
+
+      /* centre captions, reference-style: one or two words, white with a heavy outline */
+      .cap { position: absolute; left: 120px; width: 768px; top: 1030px; text-align: center; font-weight: 900; font-size: 104px; line-height: 1.1; color: var(--ink);
+             -webkit-text-stroke: 16px #111; paint-order: stroke fill; letter-spacing: -0.01em; }
+      .cap.y { color: var(--gold); }
+      .cap.r { color: #ff4a4f; }
+      #title { position: absolute; left: 120px; width: 768px; top: 330px; text-align: center; font-weight: 900; font-size: 150px; line-height: 1.02; color: #fff; -webkit-text-stroke: 20px #111; paint-order: stroke fill; }
+      #title .r { color: #ff4a4f; }
+      .stamp { position: absolute; border: 12px solid var(--red); color: var(--red); background: rgba(255,255,255,0.9); font-weight: 900; padding: 4px 30px; border-radius: 16px; letter-spacing: 0.02em; }
+      #xmark { position: absolute; left: 160px; top: 520px; width: 700px; height: 700px; }
+      #stamp-low { font-size: 100px; left: 210px; top: 760px; }
+      #stamp-pass { font-size: 110px; left: 300px; top: 470px; }
+      #stamp-perfect { font-size: 108px; left: 175px; top: 560px; }
+      #contract { position: absolute; left: 190px; top: 380px; width: 640px; height: 560px; }
+      #word { position: absolute; left: 120px; width: 768px; top: 430px; text-align: center; font-weight: 900; font-size: 300px; line-height: 1; color: var(--red); -webkit-text-stroke: 22px #fff; paint-order: stroke fill; }
+      #word-sub { position: absolute; left: 120px; width: 768px; top: 770px; text-align: center; font-weight: 900; font-size: 92px; color: #1d2433; -webkit-text-stroke: 14px #fff; paint-order: stroke fill; }
+      #toast { position: absolute; left: 170px; width: 680px; top: 292px; background: #fff; border-radius: 34px; padding: 26px 34px; display: flex; align-items: center; gap: 26px; box-shadow: 0 18px 40px rgba(0,0,0,0.25); }
+      #toast .ic { width: 96px; height: 96px; border-radius: 24px; background: #2e7d4f; color: #fff; font-weight: 900; font-size: 60px; display: flex; align-items: center; justify-content: center; flex: none; }
+      #toast .t1 { font-weight: 900; font-size: 34px; color: #6b7280; }
+      #toast .t2 { font-weight: 900; font-size: 50px; color: #1d2433; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="41.5" data-width="1080" data-height="1920">
+      <canvas id="stage" class="clip" data-start="0" data-duration="41.5" data-track-index="0" width="1080" height="1920"></canvas>
+      <audio id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="41.5" data-track-index="4"></audio>
+
+      <div id="title" class="clip" data-start="0" data-duration="1.99" data-track-index="1">은행<br /><span class="r">터는 법</span></div>
+
+      <!-- centre captions -->
+      <div id="c1" class="clip cap" data-start="2.44" data-duration="2.0" data-track-index="2">문 열고 들어가서</div>
+      <div id="c2" class="clip cap r" data-start="4.47" data-duration="1.3" data-track-index="2">글록 꺼내고</div>
+      <div id="c3" class="clip cap" data-start="5.78" data-duration="1.22" data-track-index="2">직원 위협</div>
+      <div id="c4" class="clip cap y" data-start="8.78" data-duration="2.6" data-track-index="2">더 효과적인 방법</div>
+      <div id="c5" class="clip cap" data-start="12.18" data-duration="1.1" data-track-index="2">시험 보고 입사</div>
+      <div id="c6" class="clip cap" data-start="13.3" data-duration="1.22" data-track-index="2">일하는 척</div>
+      <div id="c7" class="clip cap" data-start="14.54" data-duration="0.86" data-track-index="2">들키지 않게</div>
+      <div id="c8" class="clip cap y" data-start="15.42" data-duration="0.72" data-track-index="2">매달</div>
+      <div id="c9" class="clip cap y" data-start="16.16" data-duration="2.75" data-track-index="2">조금씩</div>
+      <div id="c10" class="clip cap" data-start="19.1" data-duration="2.1" data-track-index="2">정말 간단</div>
+      <div id="c11" class="clip cap" data-start="21.24" data-duration="1.3" data-track-index="2">근로계약서 쓰고</div>
+      <div id="c12" class="clip cap" data-start="22.57" data-duration="1.5" data-track-index="2">계좌번호 적으면</div>
+      <div id="c13" class="clip cap y" data-start="24.14" data-duration="2.85" data-track-index="2">자동이체</div>
+      <div id="c14" class="clip cap" data-start="27.13" data-duration="2.75" data-track-index="2">조금씩 꾸준히</div>
+      <div id="c15" class="clip cap y" data-start="29.94" data-duration="1.25" data-track-index="2">리스크 0</div>
+      <div id="c16" class="clip cap" data-start="33.75" data-duration="2.12" data-track-index="2">이 방법을</div>
+      <div id="c17" class="clip cap r" data-start="35.91" data-duration="1.47" data-track-index="2">우리는...</div>
+
+      <!-- graphic overlays -->
+      <svg id="xmark" class="clip" data-start="7.0" data-duration="1.26" data-track-index="3" viewBox="0 0 700 700"><line id="x1" x1="70" y1="70" x2="630" y2="630" stroke="#e3262d" stroke-width="44" stroke-linecap="round" stroke-dasharray="800" stroke-dashoffset="800"/><line id="x2" x1="630" y1="70" x2="70" y2="630" stroke="#e3262d" stroke-width="44" stroke-linecap="round" stroke-dasharray="800" stroke-dashoffset="800"/></svg>
+      <div id="stamp-low" class="clip stamp" data-start="7.5" data-duration="0.76" data-track-index="2" data-layout-allow-overlap>하수의 방법</div>
+      <div id="stamp-pass" class="clip stamp" data-start="12.9" data-duration="2.5" data-track-index="3">합격</div>
+      <svg id="contract" class="clip" data-start="21.24" data-duration="2.85" data-track-index="3" viewBox="0 0 640 560">
+        <rect x="8" y="8" width="624" height="544" rx="18" fill="#fffdf7" stroke="#1d2433" stroke-width="6"/>
+        <text x="320" y="96" text-anchor="middle" font-family="Pretendard" font-weight="900" font-size="64" fill="#1d2433">근로계약서</text>
+        <rect x="60" y="140" width="520" height="12" rx="6" fill="#d6cfc2"/><rect x="60" y="176" width="420" height="12" rx="6" fill="#d6cfc2"/>
+        <text x="60" y="300" font-family="Pretendard" font-weight="900" font-size="46" fill="#1d2433">계좌번호</text>
+        <text id="acct" x="270" y="300" font-family="Pretendard" font-weight="900" font-size="44" fill="#e3262d" opacity="0">110-425-XXXX</text>
+        <line x1="270" y1="316" x2="590" y2="316" stroke="#1d2433" stroke-width="4"/>
+        <text x="60" y="440" font-family="Pretendard" font-weight="900" font-size="46" fill="#1d2433">서명</text>
+        <path id="sign" d="M190 440 q24 -50 48 0 t48 -8 q20 -36 36 6 q12 24 48 -12 q24 -22 72 8" fill="none" stroke="#1d2433" stroke-width="8" stroke-linecap="round" stroke-dasharray="520" stroke-dashoffset="520"/>
+      </svg>
+      <div id="stamp-perfect" class="clip stamp" data-start="31.22" data-duration="2.45" data-track-index="3">완벽한 범죄</div>
+
+      <!-- reveal -->
+      <div id="word" class="clip" data-start="37.43" data-duration="4.07" data-track-index="2">월급</div>
+      <div id="word-sub" class="clip" data-start="38.37" data-duration="3.13" data-track-index="3">이라고 부릅니다</div>
+      <div id="toast" class="clip" data-start="38.8" data-duration="2.7" data-track-index="1"><div class="ic">₩</div><div><div class="t1">은행 알림 · 방금</div><div class="t2">급여가 입금되었습니다</div></div></div>
+    </div>
+
+    <script>
+      // 2D overlays on the GSAP root timeline
+      const tl = gsap.timeline({ paused: true });
+      const pop = (sel, at) => tl.fromTo(sel, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.16, ease: "back.out(3)" }, at);
+      tl.fromTo("#title", { scale: 1.15 }, { scale: 1, duration: 0.45, ease: "back.out(2)" }, 0);
+      [["#c1", 2.44], ["#c2", 4.47], ["#c3", 5.78], ["#c4", 8.78], ["#c5", 12.18], ["#c6", 13.3], ["#c7", 14.54], ["#c8", 15.42], ["#c9", 16.16], ["#c10", 19.1],
+       ["#c11", 21.24], ["#c12", 22.57], ["#c13", 24.14], ["#c14", 27.13], ["#c15", 29.94], ["#c16", 33.75], ["#c17", 35.91]].forEach(([s, t]) => pop(s, t));
+      tl.fromTo("#x1", { attr: { "stroke-dashoffset": 800 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.2, ease: "power2.in" }, 7.0);
+      tl.fromTo("#x2", { attr: { "stroke-dashoffset": 800 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.2, ease: "power2.in" }, 7.22);
+      tl.fromTo("#stamp-low", { opacity: 0, scale: 2.2, rotation: -10 }, { opacity: 1, scale: 1, rotation: -10, duration: 0.16, ease: "power4.in" }, 7.5);
+      tl.fromTo("#stamp-pass", { opacity: 0, scale: 2.4, rotation: 12 }, { opacity: 1, scale: 1, rotation: 12, duration: 0.16, ease: "power4.in" }, 12.9);
+      tl.fromTo("#contract", { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 21.24);
+      tl.fromTo("#sign", { attr: { "stroke-dashoffset": 520 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.6, ease: "power1.inOut" }, 21.9);
+      tl.fromTo("#acct", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 22.65);
+      tl.fromTo("#stamp-perfect", { opacity: 0, scale: 2.2, rotation: -8 }, { opacity: 1, scale: 1, rotation: -8, duration: 0.16, ease: "power4.in" }, 31.22);
+      tl.fromTo("#word", { opacity: 0, scale: 2.8, rotation: -14 }, { opacity: 1, scale: 1, rotation: -4, duration: 0.2, ease: "power4.in" }, 37.43);
+      tl.fromTo("#word", { y: 0 }, { y: -10, duration: 0.45, yoyo: true, repeat: 5, ease: "sine.inOut" }, 38.0);
+      tl.fromTo("#word-sub", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 38.37);
+      tl.fromTo("#toast", { opacity: 0, y: -60 }, { opacity: 1, y: 0, duration: 0.35, ease: "back.out(2)" }, 38.8);
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+
+      // 3D stage: built after the Korean font loads (canvas textures draw text), then driven by hf-seek
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      let lastT = 0, draw = null;
+      window.addEventListener("hf-seek", (e) => { lastT = e.detail.time; if (draw) draw(lastT); });
+      window.__hf.buildReady["stage"] = document.fonts.load('900 64px "Pretendard"').then(() => import("./assets/scene.js")).then((m) => { draw = m.renderAt; draw(lastT); });
+    </script>
+  </body>
+</html>

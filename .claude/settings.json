@@ -1,0 +1,22 @@
+{
+  "extraKnownMarketplaces": {
+    "thedotmack": {
+      "source": { "source": "github", "repo": "thedotmack/claude-mem" }
+    },
+    "egm": {
+      "source": { "source": "github", "repo": "google/elephant-goldfish-model" }
+    },
+    "21st-dev": {
+      "source": { "source": "github", "repo": "21st-dev/magic-mcp" }
+    },
+    "claude-plugins-official": {
+      "source": { "source": "github", "repo": "anthropics/claude-plugins-official" }
+    }
+  },
+  "enabledPlugins": {
+    "claude-mem@thedotmack": true,
+    "egm@egm": true,
+    "21st@21st-dev": true,
+    "claude-code-setup@claude-plugins-official": true
+  }
+}
