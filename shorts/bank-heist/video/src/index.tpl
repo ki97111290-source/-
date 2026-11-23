@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Pretendard"; font-weight: 900; src: url("assets/fonts/Pretendard-Black.woff2") format("woff2"); }
+      @font-face { font-family: "Pretendard"; font-weight: 700; src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2"); }
+      @font-face { font-family: "Pretendard"; font-weight: 500; src: url("assets/fonts/Pretendard-Medium.woff2") format("woff2"); }
+      :root {
+        --ground: #0b0b0d;
+        --ink: #f2efe9;
+        --dim: #8a8580;
+        --red: #e3262d;
+        --gold: #f4c542;
+        --office: #f6f1e7;
+        --office-ink: #1d2433;
+        --font: "Pretendard", sans-serif;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ground); }
+      #root { position: relative; width: 100%; height: 100%; font-family: var(--font); color: var(--ink); background: var(--ground); overflow: hidden; }
+
+      /* full-frame layers */
+      .layer { position: absolute; inset: 0; }
+      .safe { position: absolute; left: 120px; width: 768px; top: 288px; height: 800px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+      .vignette { background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.75) 100%); pointer-events: none; }
+      .grain { opacity: 0.09; pointer-events: none; }
+
+      /* HUD (decoration) */
+      #hud { z-index: 40; }
+      #hud .tag { position: absolute; top: 190px; left: 120px; font-weight: 700; font-size: 30px; letter-spacing: 0.12em; color: var(--dim); }
+      #hud .rec { position: absolute; top: 190px; left: 690px; font-weight: 700; font-size: 30px; letter-spacing: 0.1em; color: var(--ink); display: flex; align-items: center; gap: 12px; }
+      #hud .dot { width: 22px; height: 22px; border-radius: 50%; background: var(--red); }
+
+      .kicker { font-weight: 700; font-size: 34px; letter-spacing: 0.2em; color: var(--red); }
+      .big { font-weight: 900; line-height: 1.05; letter-spacing: -0.02em; }
+      .stamp { position: absolute; border: 10px solid var(--red); color: var(--red); font-weight: 900; padding: 6px 28px; border-radius: 14px; letter-spacing: 0.04em; }
+
+      /* s1 */
+      #s1-siren { position: absolute; left: 0; right: 0; top: 0; height: 1920px; background: radial-gradient(ellipse at 50% 0%, rgba(227,38,45,0.55), rgba(227,38,45,0) 60%); }
+      #s1-title { font-size: 210px; }
+      #s1-title .r { color: var(--red); }
+
+      /* s2 */
+      .row { display: flex; align-items: center; gap: 36px; width: 720px; margin: 22px 0; }
+      .row svg { flex: none; }
+      .row .lbl { font-weight: 900; font-size: 64px; text-align: left; }
+      #s2-x { position: absolute; left: 120px; top: 300px; width: 768px; height: 780px; }
+      #s2-stamp { font-size: 96px; left: 230px; top: 620px; background: rgba(11,11,13,0.82); }
+
+      /* s3 */
+      #s3-l1 { font-size: 104px; }
+      #s3-l2 { font-size: 150px; color: var(--red); margin-top: 18px; }
+      #s3-line { height: 12px; width: 560px; background: var(--red); margin-top: 26px; transform-origin: left center; }
+
+      /* s4 */
+      .step { display: flex; align-items: center; gap: 30px; width: 740px; margin: 26px 0; text-align: left; }
+      .num { flex: none; width: 92px; height: 92px; border-radius: 50%; border: 6px solid var(--red); color: var(--red); font-weight: 900; font-size: 56px; display: flex; align-items: center; justify-content: center; }
+      .step .lbl { font-weight: 900; font-size: 62px; }
+      .step .sub { font-weight: 500; font-size: 34px; color: var(--dim); margin-top: 6px; }
+
+      /* s5 */
+      #s5-head { font-size: 84px; }
+      #s5-doc { margin-top: 30px; }
+      #s5-flow { margin-top: 26px; }
+
+      /* s6 */
+      #s6-card { width: 720px; border: 4px solid #2a2a2e; border-radius: 26px; background: #151518; padding: 40px 48px; text-align: left; }
+      .chk { display: flex; align-items: center; gap: 26px; font-weight: 900; font-size: 64px; margin: 22px 0; }
+      .box { flex: none; width: 76px; height: 76px; border: 6px solid var(--ink); border-radius: 14px; position: relative; }
+      .tick { position: absolute; left: 6px; top: -14px; }
+      #s6-stamp { font-size: 110px; left: 170px; top: 820px; background: rgba(11,11,13,0.85); }
+
+      /* s7 */
+      #s7-text { font-size: 92px; line-height: 1.25; }
+      #s7-text .w { display: inline-block; }
+
+      /* s8 */
+      #s8 { background: var(--office); color: var(--office-ink); }
+      #s8-flash { background: #fff; z-index: 5; }
+      #s8-slip { margin-bottom: 40px; }
+      #s8-word { font-size: 330px; font-weight: 900; color: var(--red); letter-spacing: -0.04em; line-height: 1; }
+      #s8-sub { font-size: 80px; font-weight: 900; margin-top: 22px; }
+      #s8-ring { position: absolute; left: 244px; top: 560px; width: 520px; height: 520px; border-radius: 50%; border: 14px solid var(--red); }
+
+      /* captions */
+      #captions { z-index: 45; }
+      .cap { position: absolute; left: 120px; width: 768px; top: 1110px; text-align: center; font-weight: 800; font-size: 54px; line-height: 1.3; color: #fff;
+             text-shadow: 0 0 10px #000, 0 4px 0 #000, 0 -2px 0 #000, 3px 0 0 #000, -3px 0 0 #000; }
+      .cap .cw { display: inline-block; margin: 0 0.12em; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="39.5" data-width="1080" data-height="1920">
+      <svg class="layer grain" width="1080" height="1920"><filter id="nz"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/><feColorMatrix type="saturate" values="0"/></filter><rect width="1080" height="1920" filter="url(#nz)"/></svg>
+      <div class="layer vignette"></div>
+      <audio id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="39.5" data-track-index="3"></audio>
+
+      <!-- ===== S1 hook: 0 – 2.03 ===== -->
+      <div id="s1" class="clip layer" data-start="0" data-duration="2.03" data-track-index="0">
+        <div id="s1-siren"></div>
+        <div class="safe">
+          <div id="s1-kick" class="kicker">사건 파일 No.0425</div>
+          <div id="s1-title" class="big">은행<br /><span class="r">터는 법</span></div>
+        </div>
+      </div>
+
+      <!-- ===== S2 cliché robbery: 2.03 – 8.32 ===== -->
+      <div id="s2" class="clip layer" data-start="2.03" data-duration="6.29" data-track-index="0">
+        <div class="safe">
+          <div id="s2-kick" class="kicker">흔히 아는 방법</div>
+          <div id="s2-r1" class="row">
+            <svg width="150" height="150" viewBox="0 0 150 150"><rect x="30" y="10" width="90" height="130" rx="6" fill="none" stroke="#f2efe9" stroke-width="8"/><rect x="42" y="22" width="66" height="106" fill="#2a2522"/><circle cx="96" cy="78" r="7" fill="#f4c542"/></svg>
+            <div class="lbl">문 열고 들어가서</div>
+          </div>
+          <div id="s2-r2" class="row">
+            <svg width="150" height="150" viewBox="0 0 150 150"><rect x="16" y="40" width="118" height="34" rx="6" fill="#f2efe9"/><rect x="22" y="44" width="104" height="5" fill="#2a2522"/><path d="M40 74 h44 l-4 10 q-6 12 -20 10 l-4 0 z" fill="#f2efe9"/><path d="M34 74 h30 l-10 62 q-2 6 -8 6 h-18 q-6 0 -5 -6 z" fill="#f2efe9"/><rect x="124" y="34" width="8" height="8" fill="#f2efe9"/></svg>
+            <div class="lbl">글록 꺼내서</div>
+          </div>
+          <div id="s2-r3" class="row">
+            <svg width="150" height="150" viewBox="0 0 150 150"><circle cx="66" cy="50" r="24" fill="#f2efe9"/><path d="M24 140 q0 -56 42 -56 q42 0 42 56 z" fill="#f2efe9"/><text x="112" y="62" font-family="Pretendard" font-weight="900" font-size="64" fill="#e3262d">!</text></svg>
+            <div class="lbl">직원 위협하기</div>
+          </div>
+        </div>
+        <svg id="s2-x" viewBox="0 0 768 820"><line id="s2-x1" x1="90" y1="110" x2="680" y2="720" stroke="#e3262d" stroke-width="34" stroke-linecap="round" stroke-dasharray="860" stroke-dashoffset="860"/><line id="s2-x2" x1="680" y1="110" x2="90" y2="720" stroke="#e3262d" stroke-width="34" stroke-linecap="round" stroke-dasharray="860" stroke-dashoffset="860"/></svg>
+        <div id="s2-stamp" class="stamp" data-layout-allow-overlap>하수의 방법</div>
+      </div>
+
+      <!-- ===== S3 better way: 8.32 – 10.98 ===== -->
+      <div id="s3" class="clip layer" data-start="8.32" data-duration="2.66" data-track-index="0">
+        <div class="safe" id="s3-box">
+          <div id="s3-l1" class="big">더욱 효과적인</div>
+          <div id="s3-l2" class="big">방법이 있다</div>
+          <div id="s3-line"></div>
+        </div>
+      </div>
+
+      <!-- ===== S4 the plan: 10.98 – 18.38 ===== -->
+      <div id="s4" class="clip layer" data-start="10.98" data-duration="7.4" data-track-index="0">
+        <div class="safe">
+          <div id="s4-kick" class="kicker">작전 계획</div>
+          <div id="s4-a" class="step"><div class="num">1</div><div><div class="lbl">시험 보고 잠입</div><div class="sub">정식 절차로 들어간다</div></div></div>
+          <div id="s4-b" class="step"><div class="num">2</div><div><div class="lbl">일하는 척</div><div class="sub">절대 들키지 않게</div></div></div>
+          <div id="s4-c" class="step"><div class="num">3</div><div><div class="lbl">매달 조금씩</div><div class="sub">한 번에 크게 X</div></div></div>
+        </div>
+      </div>
+
+      <!-- ===== S5 how it works: 18.38 – 26.06 ===== -->
+      <div id="s5" class="clip layer" data-start="18.38" data-duration="7.68" data-track-index="0">
+        <div class="safe">
+          <div id="s5-head" class="big">정말 간단합니다</div>
+          <svg id="s5-doc" width="480" height="326" viewBox="0 0 560 380">
+            <rect x="6" y="6" width="548" height="368" rx="14" fill="#f2efe9"/>
+            <text x="280" y="70" text-anchor="middle" font-family="Pretendard" font-weight="900" font-size="46" fill="#1d2433">근로계약서</text>
+            <rect x="60" y="102" width="440" height="10" rx="5" fill="#cfc8bd"/>
+            <rect x="60" y="130" width="360" height="10" rx="5" fill="#cfc8bd"/>
+            <text x="60" y="210" font-family="Pretendard" font-weight="700" font-size="38" fill="#1d2433">계좌번호</text>
+            <text id="s5-acct" x="230" y="210" font-family="Pretendard" font-weight="700" font-size="36" fill="#e3262d" opacity="0">110-425-XXXXXX</text>
+            <line x1="210" y1="220" x2="500" y2="220" stroke="#1d2433" stroke-width="3"/>
+            <text x="60" y="300" font-family="Pretendard" font-weight="700" font-size="38" fill="#1d2433">서명</text>
+            <path id="s5-sign" d="M150 300 q20 -40 40 0 t40 -6 q16 -30 30 4 q10 20 40 -10 q20 -18 60 6" fill="none" stroke="#1d2433" stroke-width="6" stroke-linecap="round" stroke-dasharray="420" stroke-dashoffset="420"/>
+          </svg>
+          <svg id="s5-flow" width="620" height="198" viewBox="0 0 720 230">
+            <g id="s5-bank"><path d="M20 80 L110 30 L200 80 Z" fill="#f2efe9"/><rect x="34" y="88" width="152" height="12" fill="#f2efe9"/><rect x="46" y="106" width="18" height="70" fill="#f2efe9"/><rect x="101" y="106" width="18" height="70" fill="#f2efe9"/><rect x="156" y="106" width="18" height="70" fill="#f2efe9"/><rect x="28" y="180" width="164" height="16" fill="#f2efe9"/><text x="110" y="226" text-anchor="middle" font-family="Pretendard" font-weight="700" font-size="36" fill="#8a8580">은행</text></g>
+            <line x1="230" y1="120" x2="500" y2="120" stroke="#f4c542" stroke-width="6" stroke-dasharray="14 14"/>
+            <circle id="s5-c1" cx="250" cy="120" r="22" fill="#f4c542"/><circle id="s5-c2" cx="250" cy="120" r="22" fill="#f4c542"/><circle id="s5-c3" cx="250" cy="120" r="22" fill="#f4c542"/>
+            <g id="s5-wallet"><rect x="530" y="70" width="160" height="110" rx="16" fill="#e3262d"/><rect x="620" y="104" width="70" height="40" rx="10" fill="#b81c22"/><circle cx="642" cy="124" r="8" fill="#f4c542"/><text x="610" y="226" text-anchor="middle" font-family="Pretendard" font-weight="700" font-size="36" fill="#8a8580">내 계좌</text></g>
+          </svg>
+          <div id="s5-auto" class="kicker" style="margin-top:14px">매달 자동 이체</div>
+        </div>
+      </div>
+
+      <!-- ===== S6 perfect crime: 26.06 – 32.20 ===== -->
+      <div id="s6" class="clip layer" data-start="26.06" data-duration="6.14" data-track-index="0">
+        <div class="safe">
+          <div id="s6-kick" class="kicker" style="margin-bottom:24px">범죄 분석 결과</div>
+          <div id="s6-card">
+            <div id="s6-i1" class="chk"><div class="box"><svg class="tick" width="80" height="80" viewBox="0 0 80 80"><path id="s6-t1" d="M10 42 L32 64 L74 14" fill="none" stroke="#e3262d" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="110" stroke-dashoffset="110"/></svg></div>리스크 0%</div>
+            <div id="s6-i2" class="chk"><div class="box"><svg class="tick" width="80" height="80" viewBox="0 0 80 80"><path id="s6-t2" d="M10 42 L32 64 L74 14" fill="none" stroke="#e3262d" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="110" stroke-dashoffset="110"/></svg></div>들킬 확률 0%</div>
+            <div id="s6-i3" class="chk"><div class="box"><svg class="tick" width="80" height="80" viewBox="0 0 80 80"><path id="s6-t3" d="M10 42 L32 64 L74 14" fill="none" stroke="#e3262d" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="110" stroke-dashoffset="110"/></svg></div>매달 반복 가능</div>
+          </div>
+        </div>
+        <div id="s6-stamp" class="stamp" data-layout-allow-overlap>완벽한 범죄</div>
+      </div>
+
+      <!-- ===== S7 build-up: 32.20 – 35.78 ===== -->
+      <div id="s7" class="clip layer" data-start="32.2" data-duration="3.58" data-track-index="0">
+        <div class="safe">
+          <div id="s7-text" class="big"><span id="s7-w1" class="w">이 은행을</span> <span id="s7-w2" class="w">터는 방법을,</span><br /><span id="s7-w3" class="w" style="color:var(--red)">우리는...</span></div>
+        </div>
+      </div>
+
+      <!-- ===== S8 reveal: 35.78 – 39.5 ===== -->
+      <div id="s8" class="clip layer" data-start="35.78" data-duration="3.72" data-track-index="0">
+        <div id="s8-ring"></div>
+        <div class="safe">
+          <svg id="s8-slip" width="420" height="150" viewBox="0 0 420 150"><rect x="4" y="4" width="412" height="142" rx="12" fill="#fff" stroke="#1d2433" stroke-width="5"/><text x="210" y="60" text-anchor="middle" font-family="Pretendard" font-weight="900" font-size="40" fill="#1d2433">급여명세서</text><rect x="40" y="96" width="150" height="10" rx="5" fill="#cfc8bd"/><text x="370" y="112" text-anchor="end" font-family="Pretendard" font-weight="900" font-size="34" fill="#e3262d">입금 완료</text></svg>
+          <div id="s8-word">월급</div>
+          <div id="s8-sub">이라고 부릅니다</div>
+        </div>
+        <div id="s8-flash" class="layer"></div>
+      </div>
+
+      <!-- ===== captions (scenes 2, 4, 5, 6) ===== -->
+      <div id="captions" class="layer">
+<!--CAPTIONS-->
+      </div>
+
+      <!-- HUD + texture (decoration, whole film except reveal) -->
+      <div id="hud" class="clip layer" data-start="0" data-duration="35.78" data-track-index="2">
+        <div class="tag">CASE FILE</div>
+        <div class="rec"><div id="hud-dot" class="dot"></div>REC</div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const E = "power3.out";
+
+      // S1 — siren pulse + title slam (title visible from frame 0 for the thumbnail)
+      tl.fromTo("#s1-siren", { opacity: 0.9 }, { opacity: 0.25, duration: 0.25, ease: "none", repeat: 7, yoyo: true }, 0);
+      tl.fromTo("#s1-title", { scale: 1.12 }, { scale: 1, duration: 0.5, ease: "back.out(2)" }, 0);
+      tl.fromTo("#s1-kick", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: E }, 0.15);
+      tl.fromTo("#s1-title", { x: 0 }, { x: 6, duration: 0.05, repeat: 5, yoyo: true, ease: "none" }, 0.66);
+
+      // S2 — three cliché steps on the words, then the X and stamp
+      tl.fromTo("#s2-kick", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 2.06);
+      tl.fromTo("#s2-r1", { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 0.35, ease: E }, 2.6);
+      tl.fromTo("#s2-r2", { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 0.35, ease: E }, 4.75);
+      tl.fromTo("#s2-r3", { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 0.35, ease: E }, 5.8);
+      tl.fromTo("#s2-x1", { attr: { "stroke-dashoffset": 860 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.22, ease: "power2.in" }, 7.05);
+      tl.fromTo("#s2-x2", { attr: { "stroke-dashoffset": 860 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.22, ease: "power2.in" }, 7.27);
+      tl.fromTo("#s2-stamp", { opacity: 0, scale: 2.2, rotation: -10 }, { opacity: 1, scale: 1, rotation: -10, duration: 0.18, ease: "power4.in" }, 7.55);
+
+      // S3 — slow push, underline
+      tl.fromTo("#s3-box", { scale: 0.92 }, { scale: 1.06, duration: 2.66, ease: "none" }, 8.32);
+      tl.fromTo("#s3-l1", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.35, ease: E }, 8.36);
+      tl.fromTo("#s3-l2", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.35, ease: E }, 9.4);
+      tl.fromTo("#s3-line", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: E }, 9.85);
+
+      // S4 — steps on the words
+      tl.fromTo("#s4-kick", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 11.0);
+      tl.fromTo("#s4-a", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.35, ease: E }, 11.7);
+      tl.fromTo("#s4-b", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.35, ease: E }, 12.95);
+      tl.fromTo("#s4-c", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.35, ease: E }, 15.1);
+
+      // S5 — contract, account number, signature, money flow
+      tl.fromTo("#s5-head", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, 18.42);
+      tl.fromTo("#s5-doc", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4, ease: E }, 20.8);
+      tl.fromTo("#s5-acct", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 22.1);
+      tl.fromTo("#s5-sign", { attr: { "stroke-dashoffset": 420 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.6, ease: "power1.inOut" }, 22.7);
+      tl.fromTo("#s5-flow", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 23.3);
+      ["#s5-c1", "#s5-c2", "#s5-c3"].forEach((c, i) => {
+        tl.fromTo(c, { attr: { cx: 250 }, opacity: 0 }, { attr: { cx: 590 }, opacity: 1, duration: 0.7, ease: "power1.in" }, 23.5 + i * 0.5);
+        tl.to(c, { opacity: 0, duration: 0.1 }, 24.2 + i * 0.5);
+      });
+      tl.fromTo("#s5-wallet", { scale: 1 }, { scale: 1.08, duration: 0.12, yoyo: true, repeat: 5, transformOrigin: "610px 125px" }, 24.2);
+      tl.fromTo("#s5-auto", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 24.3);
+
+      // S6 — checklist ticks, stamp
+      tl.fromTo("#s6-kick", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 26.1);
+      tl.fromTo("#s6-card", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.35, ease: E }, 26.2);
+      tl.fromTo("#s6-t1", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.25 }, 28.6);
+      tl.fromTo("#s6-t2", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.25 }, 29.25);
+      tl.fromTo("#s6-t3", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.25 }, 29.9);
+      tl.fromTo("#s6-stamp", { opacity: 0, scale: 2.2, rotation: -8 }, { opacity: 1, scale: 1, rotation: -8, duration: 0.18, ease: "power4.in" }, 30.5);
+
+      // S7 — word by word, slow push, HUD dims
+      tl.fromTo("#s7-text", { scale: 1 }, { scale: 1.08, duration: 3.58, ease: "none" }, 32.2);
+      tl.fromTo("#s7-w1", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 32.24);
+      tl.fromTo("#s7-w2", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 33.06);
+      tl.fromTo("#s7-w3", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 34.23);
+
+      // S8 — flash to office, 월급 slam
+      tl.fromTo("#s8-flash", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power2.out" }, 35.78);
+      tl.fromTo("#s8-word", { scale: 2.6, rotation: -14, opacity: 0 }, { scale: 1, rotation: -4, opacity: 1, duration: 0.2, ease: "power4.in" }, 35.82);
+      tl.fromTo("#s8-ring", { scale: 0.4, opacity: 0.9 }, { scale: 1.5, opacity: 0, duration: 0.6, ease: "power2.out" }, 36.02);
+      tl.fromTo("#s8-slip", { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 0.3, ease: E }, 36.2);
+      tl.fromTo("#s8-sub", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: E }, 36.62);
+      tl.fromTo("#s8-word", { y: 0 }, { y: -8, duration: 0.5, yoyo: true, repeat: 3, ease: "sine.inOut" }, 37.2);
+
+      // HUD REC blink (finite)
+      tl.fromTo("#hud-dot", { opacity: 1 }, { opacity: 0.15, duration: 0.5, yoyo: true, repeat: 70, ease: "steps(1)" }, 0);
+
+      // captions word highlight
+/*CAPTION_TWEENS*/
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
